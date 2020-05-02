@@ -63,10 +63,9 @@ public class SaleOrderLineServiceSupplyChainImpl extends SaleOrderLineServiceImp
   @Inject protected AnalyticMoveLineService analyticMoveLineService;
 
   @Override
-  public void computeProductInformation(
-      SaleOrderLine saleOrderLine, SaleOrder saleOrder, Integer packPriceSelect)
+  public void computeProductInformation(SaleOrderLine saleOrderLine, SaleOrder saleOrder)
       throws AxelorException {
-    super.computeProductInformation(saleOrderLine, saleOrder, packPriceSelect);
+    super.computeProductInformation(saleOrderLine, saleOrder);
     saleOrderLine.setSaleSupplySelect(saleOrderLine.getProduct().getSaleSupplySelect());
 
     if (Beans.get(AppAccountService.class).isApp("supplychain")) {
@@ -99,6 +98,7 @@ public class SaleOrderLineServiceSupplyChainImpl extends SaleOrderLineServiceImp
     return saleOrderLine;
   }
 
+  @Override
   public SaleOrderLine computeAnalyticDistribution(SaleOrderLine saleOrderLine) {
 
     List<AnalyticMoveLine> analyticMoveLineList = saleOrderLine.getAnalyticMoveLineList();
