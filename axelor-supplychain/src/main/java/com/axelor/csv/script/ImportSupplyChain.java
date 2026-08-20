@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,45 +14,55 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.csv.script;
 
 import com.axelor.apps.account.db.Invoice;
 import com.axelor.apps.account.service.invoice.InvoiceService;
+import com.axelor.apps.account.service.invoice.InvoiceTermService;
+import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.db.Product;
+import com.axelor.apps.base.service.app.AppBaseService;
+import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.apps.purchase.db.PurchaseOrder;
 import com.axelor.apps.purchase.db.PurchaseOrderLine;
 import com.axelor.apps.purchase.db.repo.PurchaseOrderRepository;
 import com.axelor.apps.purchase.script.ImportPurchaseOrder;
+import com.axelor.apps.purchase.service.PurchaseOrderService;
+import com.axelor.apps.purchase.service.PurchaseOrderTypeSelectService;
+import com.axelor.apps.purchase.service.PurchaseOrderWorkflowService;
 import com.axelor.apps.sale.db.SaleConfig;
 import com.axelor.apps.sale.db.SaleOrder;
 import com.axelor.apps.sale.db.SaleOrderLine;
 import com.axelor.apps.sale.db.repo.SaleConfigRepository;
 import com.axelor.apps.sale.db.repo.SaleOrderRepository;
-import com.axelor.apps.sale.service.saleorder.SaleOrderWorkflowService;
+import com.axelor.apps.sale.service.saleorder.status.SaleOrderConfirmService;
+import com.axelor.apps.stock.db.Inventory;
+import com.axelor.apps.stock.db.InventoryLine;
 import com.axelor.apps.stock.db.StockMove;
 import com.axelor.apps.stock.db.repo.StockMoveRepository;
 import com.axelor.apps.stock.service.StockMoveService;
 import com.axelor.apps.stock.service.config.StockConfigService;
+import com.axelor.apps.stock.service.inventory.InventoryLineService;
 import com.axelor.apps.supplychain.service.PurchaseOrderInvoiceService;
-import com.axelor.apps.supplychain.service.PurchaseOrderServiceSupplychainImpl;
 import com.axelor.apps.supplychain.service.PurchaseOrderStockServiceImpl;
-import com.axelor.apps.supplychain.service.SaleOrderInvoiceService;
-import com.axelor.apps.supplychain.service.SaleOrderStockService;
 import com.axelor.apps.supplychain.service.SupplychainSaleConfigService;
+import com.axelor.apps.supplychain.service.saleorder.SaleOrderInvoiceService;
+import com.axelor.apps.supplychain.service.saleorder.SaleOrderStockService;
 import com.axelor.auth.AuthUtils;
-import com.axelor.exception.service.TraceBackService;
 import com.axelor.inject.Beans;
-import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
-import java.time.LocalDate;
+import jakarta.inject.Inject;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 public class ImportSupplyChain {
 
-  @Inject protected PurchaseOrderServiceSupplychainImpl purchaseOrderServiceSupplychainImpl;
+  @Inject protected PurchaseOrderService purchaseOrderService;
+
+  @Inject protected PurchaseOrderWorkflowService purchaseOrderWorkflowService;
 
   @Inject protected PurchaseOrderStockServiceImpl purchaseOrderStockServiceImpl;
 
@@ -73,6 +84,16 @@ public class ImportSupplyChain {
 
   @Inject protected ImportSaleOrder importSaleOrder;
 
+  @Inject protected InventoryLineService inventoryLineService;
+
+  @Inject protected InvoiceTermService invoiceTermService;
+
+  @Inject protected SaleOrderConfirmService saleOrderConfirmService;
+
+  @Inject protected PurchaseOrderTypeSelectService purchaseOrderTypeSelectService;
+
+  @Inject protected PurchaseOrderRepository purchaseOrderRepo;
+
   @SuppressWarnings("rawtypes")
   public Object importSupplyChain(Object bean, Map values) {
 
@@ -84,7 +105,7 @@ public class ImportSupplyChain {
     return bean;
   }
 
-  @Transactional
+  @Transactional(rollbackOn = {Exception.class})
   public Object importPurchaseOrderFromSupplyChain(Object bean, Map<String, Object> values) {
 
     try {
@@ -103,22 +124,23 @@ public class ImportSupplyChain {
 
       if (status == PurchaseOrderRepository.STATUS_VALIDATED
           || status == PurchaseOrderRepository.STATUS_FINISHED) {
-        purchaseOrderServiceSupplychainImpl.validatePurchaseOrder(purchaseOrder);
+        purchaseOrderWorkflowService.validatePurchaseOrder(purchaseOrder);
       }
 
       if (status == PurchaseOrderRepository.STATUS_FINISHED) {
         List<Long> idList =
             purchaseOrderStockServiceImpl.createStockMoveFromPurchaseOrder(purchaseOrder);
         for (Long id : idList) {
-          StockMove stockMove = Beans.get(StockMoveRepository.class).find(id);
+          StockMove stockMove = stockMoveRepo.find(id);
           stockMoveService.copyQtyToRealQty(stockMove);
           stockMoveService.realize(stockMove);
-          stockMove.setRealDate(purchaseOrder.getDeliveryDate());
+          stockMove.setRealDate(purchaseOrder.getEstimatedReceiptDate());
         }
-        purchaseOrder.setValidationDate(purchaseOrder.getOrderDate());
+        purchaseOrder = purchaseOrderRepo.find(purchaseOrder.getId());
+        purchaseOrder.setValidationDateTime(purchaseOrder.getOrderDate().atStartOfDay());
         purchaseOrder.setValidatedByUser(AuthUtils.getUser());
-        purchaseOrder.setSupplierPartner(
-            purchaseOrderServiceSupplychainImpl.validateSupplier(purchaseOrder));
+        purchaseOrder.setSupplierPartner(purchaseOrderService.validateSupplier(purchaseOrder));
+        purchaseOrderTypeSelectService.setTypeSelect(purchaseOrder);
         Invoice invoice =
             Beans.get(PurchaseOrderInvoiceService.class).generateInvoice(purchaseOrder);
 
@@ -127,17 +149,23 @@ public class ImportSupplyChain {
 
         invoice.setInternalReference(purchaseOrder.getInternalReference());
 
-        LocalDate date;
-        if (purchaseOrder.getValidationDate() != null) {
-          date = purchaseOrder.getValidationDate();
+        LocalDateTime dateTime;
+        if (purchaseOrder.getValidationDateTime() != null) {
+          dateTime = purchaseOrder.getValidationDateTime();
         } else {
-          date = LocalDate.now();
+          dateTime =
+              Beans.get(AppBaseService.class)
+                  .getTodayDateTime(purchaseOrder.getCompany())
+                  .toLocalDateTime();
         }
-        invoice.setInvoiceDate(date);
-        invoice.setOriginDate(date.minusDays(15));
+        invoice.setInvoiceDate(dateTime.toLocalDate());
+        invoice.setOriginDate(dateTime.toLocalDate().minusDays(15));
+        invoiceTermService.computeInvoiceTerms(invoice);
 
         invoiceService.validateAndVentilate(invoice);
-        purchaseOrderServiceSupplychainImpl.finishPurchaseOrder(purchaseOrder);
+        if (purchaseOrder.getStatusSelect() != PurchaseOrderRepository.STATUS_FINISHED) {
+          purchaseOrderWorkflowService.finishPurchaseOrder(purchaseOrder);
+        }
       }
 
     } catch (Exception e) {
@@ -147,10 +175,9 @@ public class ImportSupplyChain {
     return null;
   }
 
-  @Transactional
+  @Transactional(rollbackOn = {Exception.class})
   public Object importSaleOrderFromSupplyChain(Object bean, Map<String, Object> values) {
     try {
-      SaleOrderWorkflowService saleOrderWorkflowService = Beans.get(SaleOrderWorkflowService.class);
       StockMoveService stockMoveService = Beans.get(StockMoveService.class);
 
       SaleOrder saleOrder = (SaleOrder) importSaleOrder.importSaleOrder(bean, values);
@@ -165,7 +192,7 @@ public class ImportSupplyChain {
       if (saleOrder.getStatusSelect() == SaleOrderRepository.STATUS_FINALIZED_QUOTATION) {
         // taskSaleOrderService.createTasks(saleOrder); TODO once we will have done the generation//
         // of tasks in project module
-        saleOrderWorkflowService.confirmSaleOrder(saleOrder);
+        saleOrderConfirmService.confirmSaleOrder(saleOrder);
         // Beans.get(SaleOrderPurchaseService.class).createPurchaseOrders(saleOrder);
         //				productionOrderSaleOrderService.generateProductionOrder(saleOrder);
         // saleOrder.setClientPartner(saleOrderWorkflowService.validateCustomer(saleOrder));
@@ -175,27 +202,44 @@ public class ImportSupplyChain {
           invoice.setInvoiceDate(saleOrder.getConfirmationDateTime().toLocalDate());
 
         } else {
-          invoice.setInvoiceDate(LocalDate.now());
+          invoice.setInvoiceDate(
+              Beans.get(AppBaseService.class).getTodayDate(saleOrder.getCompany()));
         }
+        invoiceTermService.computeInvoiceTerms(invoice);
+        invoiceTermService.setDueDates(invoice, invoice.getInvoiceDate());
         invoiceService.validateAndVentilate(invoice);
 
         List<Long> idList = saleOrderStockService.createStocksMovesFromSaleOrder(saleOrder);
         for (Long id : idList) {
-          StockMove stockMove = Beans.get(StockMoveRepository.class).find(id);
+          StockMove stockMove = stockMoveRepo.find(id);
           if (stockMove.getStockMoveLineList() != null
               && !stockMove.getStockMoveLineList().isEmpty()) {
             stockMoveService.copyQtyToRealQty(stockMove);
-            stockMoveService.validate(stockMove);
+            stockMoveService.realize(stockMove);
             if (saleOrder.getConfirmationDateTime() != null) {
               stockMove.setRealDate(saleOrder.getConfirmationDateTime().toLocalDate());
             }
           }
         }
       }
+      saleOrder = saleOrderRepo.find(saleOrder.getId());
       saleOrderRepo.save(saleOrder);
     } catch (Exception e) {
       TraceBackService.trace(e);
     }
     return null;
+  }
+
+  public Object importInventory(Object bean, Map<String, Object> values) throws AxelorException {
+
+    assert bean instanceof Inventory;
+
+    Inventory inventory = (Inventory) bean;
+
+    for (InventoryLine inventoryLine : inventory.getInventoryLineList()) {
+      inventoryLineService.compute(inventoryLine, inventoryLine.getInventory());
+    }
+
+    return inventory;
   }
 }

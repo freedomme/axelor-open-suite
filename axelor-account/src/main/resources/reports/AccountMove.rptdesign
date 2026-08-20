@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.23" id="1">
-    <property name="createdBy">Eclipse BIRT Designer Version 4.7.0.v201706222054</property>
+<report xmlns="http://www.eclipse.org/birt/2005/design" version="3.2.27" id="1">
+    <property name="createdBy">Eclipse BIRT Designer Version 4.21.0.v202508021620</property>
     <list-property name="propertyBindings">
         <structure>
             <property name="name">odaURL</property>
@@ -21,6 +21,18 @@
             <property name="name">odaDriverClass</property>
             <property name="id">209</property>
             <expression name="value" type="javascript">params["DefaultDriver"].value</expression>
+        </structure>
+        <structure>
+            <property name="name">queryText</property>
+            <property name="id">4444</property>
+        </structure>
+        <structure>
+            <property name="name">queryTimeOut</property>
+            <property name="id">4444</property>
+        </structure>
+        <structure>
+            <property name="name">rowFetchSize</property>
+            <property name="id">4444</property>
         </structure>
     </list-property>
     <property name="units">cm</property>
@@ -73,23 +85,6 @@
             <property name="distinct">true</property>
             <list-property name="selectionList"/>
             <property name="paramType">simple</property>
-            <property name="controlType">text-box</property>
-            <structure name="format">
-                <property name="category">Unformatted</property>
-            </structure>
-        </scalar-parameter>
-        <scalar-parameter name="Locale" id="3676">
-            <property name="hidden">true</property>
-            <property name="valueType">static</property>
-            <property name="isRequired">false</property>
-            <property name="dataType">string</property>
-            <property name="distinct">true</property>
-            <simple-property-list name="defaultValue">
-                <value type="constant">fr</value>
-            </simple-property-list>
-            <list-property name="selectionList"/>
-            <property name="paramType">simple</property>
-            <property name="concealValue">false</property>
             <property name="controlType">text-box</property>
             <structure name="format">
                 <property name="category">Unformatted</property>
@@ -176,7 +171,7 @@
                 </structure>
                 <structure>
                     <property name="name">param_2</property>
-                    <property name="paramName">Locale</property>
+                    <property name="paramName">__locale</property>
                     <property name="nativeName"></property>
                     <property name="dataType">string</property>
                     <property name="nativeDataType">-1</property>
@@ -218,7 +213,7 @@
             </list-property>
             <xml-property name="queryText"><![CDATA[select LangTranslate.message_key, LangTranslate.message_value as "translation" 
 from meta_translation as LangTranslate 
-where LangTranslate.message_key = ? and LangTranslate.language = ?]]></xml-property>
+where LangTranslate.message_key = ? and LangTranslate.language = substring(?, '^[a-zA-Z]+')]]></xml-property>
             <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
   <Version>2.0</Version>
@@ -265,10 +260,10 @@ where LangTranslate.message_key = ? and LangTranslate.language = ?]]></xml-prope
                     <text-property name="heading">id</text-property>
                 </structure>
                 <structure>
-                    <property name="columnName">logo_path</property>
-                    <property name="analysis">dimension</property>
-                    <text-property name="displayName">logo_path</text-property>
-                    <text-property name="heading">logo_path</text-property>
+                    <property name="columnName">logo_id</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">logo_id</text-property>
+                    <text-property name="heading">logo_id</text-property>
                 </structure>
                 <structure>
                     <property name="columnName">header</property>
@@ -353,8 +348,8 @@ where LangTranslate.message_key = ? and LangTranslate.language = ?]]></xml-prope
                     </structure>
                     <structure>
                         <property name="position">2</property>
-                        <property name="name">logo_path</property>
-                        <property name="dataType">string</property>
+                        <property name="name">logo_id</property>
+                        <property name="dataType">decimal</property>
                     </structure>
                     <structure>
                         <property name="position">3</property>
@@ -364,7 +359,7 @@ where LangTranslate.message_key = ? and LangTranslate.language = ?]]></xml-prope
                     <structure>
                         <property name="position">4</property>
                         <property name="name">technical_origin</property>
-                        <property name="dataType">integer</property>
+                        <property name="dataType">string</property>
                     </structure>
                     <structure>
                         <property name="position">5</property>
@@ -419,10 +414,10 @@ where LangTranslate.message_key = ? and LangTranslate.language = ?]]></xml-prope
                 </structure>
                 <structure>
                     <property name="position">2</property>
-                    <property name="name">logo_path</property>
-                    <property name="nativeName">logo_path</property>
-                    <property name="dataType">string</property>
-                    <property name="nativeDataType">12</property>
+                    <property name="name">logo_id</property>
+                    <property name="nativeName">logo_id</property>
+                    <property name="dataType">decimal</property>
+                    <property name="nativeDataType">-5</property>
                 </structure>
                 <structure>
                     <property name="position">3</property>
@@ -435,8 +430,8 @@ where LangTranslate.message_key = ? and LangTranslate.language = ?]]></xml-prope
                     <property name="position">4</property>
                     <property name="name">technical_origin</property>
                     <property name="nativeName">technical_origin</property>
-                    <property name="dataType">integer</property>
-                    <property name="nativeDataType">4</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
                 </structure>
                 <structure>
                     <property name="position">5</property>
@@ -495,8 +490,8 @@ where LangTranslate.message_key = ? and LangTranslate.language = ?]]></xml-prope
                     <property name="nativeDataType">12</property>
                 </structure>
             </list-property>
-            <xml-property name="queryText"><![CDATA[select move.id,	MetaFile.file_path as logo_path, PrintingSettings.pdf_header as "header", 
- move.technical_origin_select as technical_origin, move.reference, currency.name as currency, journal.name as journal,
+            <xml-property name="queryText"><![CDATA[select move.id,	MetaFile.id as logo_id, PrintingSettings.pdf_header as "header", 
+ select_item.title as technical_origin, move.reference, currency.name as currency, journal.name as journal,
  company.name as company, company.height as logo_height, company.width as logo_width,
  period.name as period, partner.full_name as partner
 from account_move as move 
@@ -507,9 +502,12 @@ left join base_period as period on (move.period = period.id)
 left join base_partner as partner on (move.partner = partner.id)
 left join base_printing_settings as PrintingSettings on (company.printing_settings = PrintingSettings.id)
 left join meta_file as MetaFile on (MetaFile.id = company.logo)
+left join meta_select MetaSelect ON (MetaSelect.name = 'iaccount.move.technical.origin.select')
+left join meta_select_item select_item ON select_item.select_id = MetaSelect.id AND select_item.value = cast(move.technical_origin_select as text)
 where move.id IN (?)]]></xml-property>
         </oda-data-set>
         <oda-data-set extensionID="org.eclipse.birt.report.data.oda.jdbc.JdbcSelectDataSet" name="AccountMoveLine" id="4444">
+            <property name="nullsOrdering">nulls lowest</property>
             <list-property name="columnHints">
                 <structure>
                     <property name="columnName">date</property>
@@ -554,12 +552,6 @@ where move.id IN (?)]]></xml-property>
                     <text-property name="heading">tax_rate</text-property>
                 </structure>
                 <structure>
-                    <property name="columnName">reconcile_sequence</property>
-                    <property name="analysis">dimension</property>
-                    <text-property name="displayName">reconcile_sequence</text-property>
-                    <text-property name="heading">reconcile_sequence</text-property>
-                </structure>
-                <structure>
                     <property name="columnName">origin</property>
                     <property name="analysis">dimension</property>
                     <text-property name="displayName">origin</text-property>
@@ -570,6 +562,42 @@ where move.id IN (?)]]></xml-property>
                     <property name="analysis">dimension</property>
                     <text-property name="displayName">description</text-property>
                     <text-property name="heading">description</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">reconcile_group</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">reconcile_group</text-property>
+                    <text-property name="heading">reconcile_group</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">company_currency_code</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">company_currency_code</text-property>
+                    <text-property name="heading">company_currency_code</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">company_currency_name</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">company_currency_name</text-property>
+                    <text-property name="heading">company_currency_name</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">currency_code</property>
+                    <property name="analysis">dimension</property>
+                    <text-property name="displayName">currency_code</text-property>
+                    <text-property name="heading">currency_code</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">currency_number_of_decimals</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">currency_number_of_decimals</text-property>
+                    <text-property name="heading">currency_number_of_decimals</text-property>
+                </structure>
+                <structure>
+                    <property name="columnName">company_currency_number_of_decimals</property>
+                    <property name="analysis">measure</property>
+                    <text-property name="displayName">company_currency_number_of_decimals</text-property>
+                    <text-property name="heading">company_currency_number_of_decimals</text-property>
                 </structure>
             </list-property>
             <list-property name="parameters">
@@ -623,18 +651,43 @@ where move.id IN (?)]]></xml-property>
                     </structure>
                     <structure>
                         <property name="position">8</property>
-                        <property name="name">reconcile_sequence</property>
-                        <property name="dataType">string</property>
-                    </structure>
-                    <structure>
-                        <property name="position">9</property>
                         <property name="name">origin</property>
                         <property name="dataType">string</property>
                     </structure>
                     <structure>
-                        <property name="position">10</property>
+                        <property name="position">9</property>
                         <property name="name">description</property>
                         <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">10</property>
+                        <property name="name">reconcile_group</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">11</property>
+                        <property name="name">company_currency_code</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">12</property>
+                        <property name="name">company_currency_name</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">13</property>
+                        <property name="name">currency_code</property>
+                        <property name="dataType">string</property>
+                    </structure>
+                    <structure>
+                        <property name="position">14</property>
+                        <property name="name">currency_number_of_decimals</property>
+                        <property name="dataType">integer</property>
+                    </structure>
+                    <structure>
+                        <property name="position">15</property>
+                        <property name="name">company_currency_number_of_decimals</property>
+                        <property name="dataType">integer</property>
                     </structure>
                 </list-property>
             </structure>
@@ -691,41 +744,82 @@ where move.id IN (?)]]></xml-property>
                 </structure>
                 <structure>
                     <property name="position">8</property>
-                    <property name="name">reconcile_sequence</property>
-                    <property name="nativeName">reconcile_sequence</property>
-                    <property name="dataType">string</property>
-                    <property name="nativeDataType">12</property>
-                </structure>
-                <structure>
-                    <property name="position">9</property>
                     <property name="name">origin</property>
                     <property name="nativeName">origin</property>
                     <property name="dataType">string</property>
                     <property name="nativeDataType">12</property>
                 </structure>
                 <structure>
-                    <property name="position">10</property>
+                    <property name="position">9</property>
                     <property name="name">description</property>
                     <property name="nativeName">description</property>
                     <property name="dataType">string</property>
                     <property name="nativeDataType">12</property>
                 </structure>
+                <structure>
+                    <property name="position">10</property>
+                    <property name="name">reconcile_group</property>
+                    <property name="nativeName">reconcile_group</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">11</property>
+                    <property name="name">company_currency_code</property>
+                    <property name="nativeName">company_currency_code</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">12</property>
+                    <property name="name">company_currency_name</property>
+                    <property name="nativeName">company_currency_name</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">13</property>
+                    <property name="name">currency_code</property>
+                    <property name="nativeName">currency_code</property>
+                    <property name="dataType">string</property>
+                    <property name="nativeDataType">12</property>
+                </structure>
+                <structure>
+                    <property name="position">14</property>
+                    <property name="name">currency_number_of_decimals</property>
+                    <property name="nativeName">currency_number_of_decimals</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
+                <structure>
+                    <property name="position">15</property>
+                    <property name="name">company_currency_number_of_decimals</property>
+                    <property name="nativeName">company_currency_number_of_decimals</property>
+                    <property name="dataType">integer</property>
+                    <property name="nativeDataType">4</property>
+                </structure>
             </list-property>
             <xml-property name="queryText"><![CDATA[select line.date_val as date, partner.partner_seq as partner, account.label,
-trunc(line.credit,2) as credit,
-trunc(line.debit,2) as debit,
-trunc(line.currency_amount,2) as currency_amount,
-line.tax_rate, reconcile.reconcile_seq as reconcile_sequence, line.origin as origin, line.description as description,
-reconcileGroup.code as reconcile_group,base_currency.code as company_currency_code,base_currency.name as company_currency_name,
-move.currency_code
+trunc(line.credit, companyCurrency.number_of_decimals) as credit,
+trunc(line.debit, companyCurrency.number_of_decimals) as debit,
+trunc(line.currency_amount, moveCurrency.number_of_decimals) as currency_amount,
+line.tax_rate, line.origin as origin,
+line.description as description,
+reconcileGroup.code as reconcile_group,
+companyCurrency.code as company_currency_code,
+companyCurrency.name as company_currency_name,
+move.currency_code,
+moveCurrency.number_of_decimals as currency_number_of_decimals,
+companyCurrency.number_of_decimals as company_currency_number_of_decimals
 from account_move_line as line
 left join base_partner as partner on (partner.id = line.partner)
 left join account_move as move on (move.id = line.move)
 left join account_account as account on (account.id = line.account)
-left join account_reconcile as reconcile on (reconcile.debit_move_line = line.id OR reconcile.credit_move_line = line.id)
 left join account_reconcile_group as reconcileGroup on (reconcileGroup.id = line.reconcile_group)
-left join base_currency on (base_currency.id = move.company_currency)
-where move.id IN (?);]]></xml-property>
+left join base_currency companyCurrency on (companyCurrency.id = move.company_currency)
+left join base_currency moveCurrency on (moveCurrency.id = move.currency)
+where move.id IN (?)
+ORDER BY line.counter;]]></xml-property>
             <xml-property name="designerValues"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <model:DesignValues xmlns:design="http://www.eclipse.org/datatools/connectivity/oda/design" xmlns:model="http://www.eclipse.org/birt/report/model/adapter/odaModel">
   <Version>2.0</Version>
@@ -894,12 +988,6 @@ where move.id IN (?);]]></xml-property>
                     <property name="dataSet">AccountMoveDS</property>
                     <list-property name="boundDataColumns">
                         <structure>
-                            <property name="name">logo_path</property>
-                            <text-property name="displayName">logo_path</text-property>
-                            <expression name="expression" type="javascript">dataSetRow["logo_path"]</expression>
-                            <property name="dataType">string</property>
-                        </structure>
-                        <structure>
                             <property name="name">reference</property>
                             <text-property name="displayName">reference</text-property>
                             <expression name="expression" type="javascript">dataSetRow["reference"]</expression>
@@ -942,20 +1030,6 @@ where move.id IN (?);]]></xml-property>
                             <property name="dataType">string</property>
                         </structure>
                         <structure>
-                            <property name="name">logo_height</property>
-                            <text-property name="displayName">logo_height</text-property>
-                            <expression name="expression" type="javascript">if(dataSetRow["logo_height"]>0){dataSetRow["logo_height"]+'px'}else{'35px'}</expression>
-                            <property name="dataType">string</property>
-                            <property name="allowExport">true</property>
-                        </structure>
-                        <structure>
-                            <property name="name">logo_width</property>
-                            <text-property name="displayName">logo_width</text-property>
-                            <expression name="expression" type="javascript">if(dataSetRow["logo_width"]>0){dataSetRow["logo_width"]+'px'}else{'100px'}</expression>
-                            <property name="dataType">string</property>
-                            <property name="allowExport">true</property>
-                        </structure>
-                        <structure>
                             <property name="name">period</property>
                             <text-property name="displayName">period</text-property>
                             <expression name="expression" type="javascript">dataSetRow["period"]</expression>
@@ -994,23 +1068,46 @@ where move.id IN (?);]]></xml-property>
                             <property name="paddingBottom">0pt</property>
                             <property name="paddingRight">1pt</property>
                             <property name="verticalAlign">middle</property>
-                            <text id="4907">
-                                <property name="fontSize">8pt</property>
+                            <image id="4910">
+                                <property name="dataSet">AccountMoveDS</property>
                                 <list-property name="visibility">
                                     <structure>
                                         <property name="format">all</property>
-                                        <expression name="valueExpr" type="javascript">row["logo_path"] == null</expression>
+                                        <expression name="valueExpr" type="javascript">row["logo_id"] == null</expression>
                                     </structure>
                                 </list-property>
-                                <property name="contentType">html</property>
-                                <text-property name="content"><![CDATA[<TABLE>
-	<TR>
-		<VALUE-OF format="HTML">
-			"<TD><IMG src='"+params["AttachmentPath"].value+row["logo_path"]+"' alt='' height='"+row["logo_height"]+"' width='"+row["logo_width"]+"'/></TD>"
-		</VALUE-OF>
-	</TR>
-</TABLE>]]></text-property>
-                            </text>
+                                <list-property name="boundDataColumns">
+                                    <structure>
+                                        <property name="name">logo_id</property>
+                                        <text-property name="displayName">logo_id</text-property>
+                                        <expression name="expression" type="javascript">dataSetRow["logo_id"]</expression>
+                                        <property name="dataType">decimal</property>
+                                    </structure>
+                                    <structure>
+                                        <property name="name">logo_height</property>
+                                        <text-property name="displayName">logo_height</text-property>
+                                        <expression name="expression" type="javascript">if(dataSetRow["logo_height"]>0){dataSetRow["logo_height"]+'px'}else{'35px'}</expression>
+                                        <property name="dataType">string</property>
+                                        <property name="allowExport">true</property>
+                                    </structure>
+                                    <structure>
+                                        <property name="name">logo_width</property>
+                                        <text-property name="displayName">logo_width</text-property>
+                                        <expression name="expression" type="javascript">if(dataSetRow["logo_width"]>0){dataSetRow["logo_width"]+'px'}else{'100px'}</expression>
+                                        <property name="dataType">string</property>
+                                        <property name="allowExport">true</property>
+                                    </structure>
+                                </list-property>
+                                <method name="onCreate"><![CDATA[this.width=row["logo_width"];
+this.height=row["logo_height"];
+
+var imgData = com.axelor.report.tool.ImageTool.getImageBytes(row["logo_id"], true);
+this.altText = "";
+if (imgData != null) {
+  this.data = imgData;
+}]]></method>
+                                <property name="source">expr</property>
+                            </image>
                         </cell>
                         <cell id="4803">
                             <property name="fontSize">8.5pt</property>
@@ -1020,6 +1117,7 @@ where move.id IN (?);]]></xml-property>
                             <property name="paddingRight">1pt</property>
                             <property name="textAlign">center</property>
                             <property name="verticalAlign">middle</property>
+                            <text id="4909"/>
                             <text id="4806">
                                 <property name="textAlign">left</property>
                                 <property name="contentType">html</property>
@@ -1036,7 +1134,7 @@ where move.id IN (?);]]></xml-property>
                             <text id="3800">
                                 <property name="textAlign">center</property>
                                 <property name="contentType">html</property>
-                                <text-property name="content"><![CDATA[<VALUE-OF format="d MMM y kk:mm">BirtDateTime.now()</VALUE-OF>]]></text-property>
+                                <text-property name="content"><![CDATA[<VALUE-OF format="Short Date">BirtDateTime.now()</VALUE-OF> <VALUE-OF format="Short Time">BirtDateTime.now()</VALUE-OF>]]></text-property>
                             </text>
                         </cell>
                         <cell id="3686">
@@ -1092,12 +1190,6 @@ where move.id IN (?);]]></xml-property>
                     <property name="dataType">decimal</property>
                 </structure>
                 <structure>
-                    <property name="name">logo_path</property>
-                    <text-property name="displayName">logo_path</text-property>
-                    <expression name="expression" type="javascript">dataSetRow["logo_path"]</expression>
-                    <property name="dataType">string</property>
-                </structure>
-                <structure>
                     <property name="name">header</property>
                     <text-property name="displayName">header</text-property>
                     <expression name="expression" type="javascript">dataSetRow["header"]</expression>
@@ -1107,7 +1199,7 @@ where move.id IN (?);]]></xml-property>
                     <property name="name">technical_origin</property>
                     <text-property name="displayName">technical_origin</text-property>
                     <expression name="expression" type="javascript">dataSetRow["technical_origin"]</expression>
-                    <property name="dataType">integer</property>
+                    <property name="dataType">string</property>
                 </structure>
                 <structure>
                     <property name="name">reference</property>
@@ -1274,6 +1366,7 @@ where move.id IN (?);]]></xml-property>
                                         <property name="marginTop">1pt</property>
                                         <property name="marginLeft">2pt</property>
                                         <property name="textAlign">left</property>
+                                        <property name="display">inline</property>
                                         <property name="dataSet">TranslateDS</property>
                                         <list-property name="paramBindings">
                                             <structure>
@@ -1298,17 +1391,38 @@ where move.id IN (?);]]></xml-property>
                                             </structure>
                                         </list-property>
                                         <property name="contentType">html</property>
-                                        <text-property name="content"><![CDATA[<B><VALUE-OF>row["translation"]</VALUE-OF></B> : <VALUE-OF>
-if(row._outer["technical_origin"] == 1) {
-	"Entry";
-} else if (row._outer["technical_origin"] == 2) {
-	"Automatic";
-} else if (row._outer["technical_origin"] == 3) {
-	"Template";
-} else {
-	"Import";
-}	
-</VALUE-OF>]]></text-property>
+                                        <text-property name="content"><![CDATA[<B><VALUE-OF>row["translation"]</VALUE-OF></B> :&amp;nbsp;]]></text-property>
+                                    </text>
+                                    <text id="5336">
+                                        <property name="display">inline</property>
+                                        <property name="dataSet">TranslateDS</property>
+                                        <list-property name="paramBindings">
+                                            <structure>
+                                                <property name="paramName">param_1</property>
+                                                <simple-property-list name="expression">
+                                                    <value type="javascript">row["technical_origin"]</value>
+                                                </simple-property-list>
+                                            </structure>
+                                        </list-property>
+                                        <list-property name="boundDataColumns">
+                                            <structure>
+                                                <property name="name">message_key</property>
+                                                <text-property name="displayName">message_key</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["message_key"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                            <structure>
+                                                <property name="name">translation</property>
+                                                <text-property name="displayName">translation</text-property>
+                                                <expression name="expression" type="javascript">dataSetRow["translation"]</expression>
+                                                <property name="dataType">string</property>
+                                            </structure>
+                                        </list-property>
+                                        <property name="contentType">html</property>
+                                        <text-property name="content"><![CDATA[<VALUE-OF>
+row["translation"] != null &amp;&amp; row["translation"].length == 0 ?row._outer["technical_origin"] : row["translation"]
+</VALUE-OF>
+]]></text-property>
                                     </text>
                                 </cell>
                                 <cell id="4833">
@@ -1467,87 +1581,46 @@ if(row._outer["technical_origin"] == 1) {
                                     <property name="dataType">string</property>
                                 </structure>
                                 <structure>
+                                    <property name="name">credit</property>
+                                    <text-property name="displayName">credit</text-property>
+                                    <expression name="expression" type="javascript">dataSetRow["credit"]</expression>
+                                    <property name="dataType">decimal</property>
+                                </structure>
+                                <structure>
+                                    <property name="name">debit</property>
+                                    <text-property name="displayName">debit</text-property>
+                                    <expression name="expression" type="javascript">dataSetRow["debit"]</expression>
+                                    <property name="dataType">decimal</property>
+                                </structure>
+                                <structure>
+                                    <property name="name">currency_amount</property>
+                                    <text-property name="displayName">currency_amount</text-property>
+                                    <expression name="expression" type="javascript">Math.abs(dataSetRow["currency_amount"])</expression>
+                                    <property name="dataType">decimal</property>
+                                    <property name="allowExport">true</property>
+                                </structure>
+                                <structure>
                                     <property name="name">tax_rate</property>
                                     <text-property name="displayName">tax_rate</text-property>
                                     <expression name="expression" type="javascript">dataSetRow["tax_rate"]</expression>
                                     <property name="dataType">decimal</property>
                                 </structure>
                                 <structure>
-                                    <property name="name">reconcile_sequence</property>
-                                    <text-property name="displayName">reconcile_sequence</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow["reconcile_sequence"]</expression>
-                                    <property name="dataType">string</property>
-                                </structure>
-                                <structure>
-                                    <property name="name">reconcile_group</property>
-                                    <text-property name="displayName">reconcile_group</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow['reconcile_group']</expression>
-                                    <property name="dataType">string</property>
-                                    <property name="allowExport">true</property>
-                                </structure>
-                                <structure>
-                                    <property name="name">currency_amount</property>
-                                    <text-property name="displayName">currency_amount</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow['currency_amount']</expression>
-                                    <property name="dataType">decimal</property>
-                                    <property name="allowExport">true</property>
-                                </structure>
-                                <structure>
-                                    <property name="name">credit</property>
-                                    <text-property name="displayName">credit</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow['credit']</expression>
-                                    <property name="dataType">decimal</property>
-                                    <property name="allowExport">true</property>
-                                </structure>
-                                <structure>
-                                    <property name="name">debit</property>
-                                    <text-property name="displayName">debit</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow['debit']</expression>
-                                    <property name="dataType">decimal</property>
-                                    <property name="allowExport">true</property>
-                                </structure>
-                                <structure>
                                     <property name="name">origin</property>
-                                    <text-property name="displayName">origin</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow['origin']</expression>
-                                    <property name="dataType">string</property>
-                                    <property name="allowExport">true</property>
-                                </structure>
-                                <structure>
-                                    <property name="name">description</property>
-                                    <text-property name="displayName">description</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow['description']</expression>
-                                    <property name="dataType">string</property>
-                                    <property name="allowExport">true</property>
-                                </structure>
-                                <structure>
-                                    <property name="name">credit_1</property>
-                                    <text-property name="displayName">credit</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow["credit"]</expression>
-                                    <property name="dataType">decimal</property>
-                                </structure>
-                                <structure>
-                                    <property name="name">debit_1</property>
-                                    <text-property name="displayName">debit</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow["debit"]</expression>
-                                    <property name="dataType">decimal</property>
-                                </structure>
-                                <structure>
-                                    <property name="name">currency_amount_1</property>
-                                    <text-property name="displayName">currency_amount</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow["currency_amount"]</expression>
-                                    <property name="dataType">decimal</property>
-                                </structure>
-                                <structure>
-                                    <property name="name">origin_1</property>
                                     <text-property name="displayName">origin</text-property>
                                     <expression name="expression" type="javascript">dataSetRow["origin"]</expression>
                                     <property name="dataType">string</property>
                                 </structure>
                                 <structure>
-                                    <property name="name">description_1</property>
+                                    <property name="name">description</property>
                                     <text-property name="displayName">description</text-property>
                                     <expression name="expression" type="javascript">dataSetRow["description"]</expression>
+                                    <property name="dataType">string</property>
+                                </structure>
+                                <structure>
+                                    <property name="name">reconcile_group</property>
+                                    <text-property name="displayName">reconcile_group</text-property>
+                                    <expression name="expression" type="javascript">dataSetRow["reconcile_group"]</expression>
                                     <property name="dataType">string</property>
                                 </structure>
                                 <structure>
@@ -1555,20 +1628,31 @@ if(row._outer["technical_origin"] == 1) {
                                     <text-property name="displayName">company_currency_code</text-property>
                                     <expression name="expression" type="javascript">dataSetRow["company_currency_code"]</expression>
                                     <property name="dataType">string</property>
-                                    <property name="allowExport">true</property>
-                                </structure>
-                                <structure>
-                                    <property name="name">currency_code</property>
-                                    <text-property name="displayName">currency_code</text-property>
-                                    <expression name="expression" type="javascript">dataSetRow["currency_code"]</expression>
-                                    <property name="dataType">string</property>
-                                    <property name="allowExport">true</property>
                                 </structure>
                                 <structure>
                                     <property name="name">company_currency_name</property>
                                     <text-property name="displayName">company_currency_name</text-property>
                                     <expression name="expression" type="javascript">dataSetRow["company_currency_name"]</expression>
                                     <property name="dataType">string</property>
+                                </structure>
+                                <structure>
+                                    <property name="name">currency_code</property>
+                                    <text-property name="displayName">currency_code</text-property>
+                                    <expression name="expression" type="javascript">dataSetRow["currency_code"]</expression>
+                                    <property name="dataType">string</property>
+                                </structure>
+                                <structure>
+                                    <property name="name">company_currency_number_of_decimals</property>
+                                    <text-property name="displayName">company_currency_number_of_decimals</text-property>
+                                    <expression name="expression" type="javascript">dataSetRow["company_currency_number_of_decimals"]</expression>
+                                    <property name="dataType">integer</property>
+                                    <property name="allowExport">true</property>
+                                </structure>
+                                <structure>
+                                    <property name="name">currency_number_of_decimals</property>
+                                    <text-property name="displayName">currency_number_of_decimals</text-property>
+                                    <expression name="expression" type="javascript">dataSetRow["currency_number_of_decimals"]</expression>
+                                    <property name="dataType">integer</property>
                                     <property name="allowExport">true</property>
                                 </structure>
                             </list-property>
@@ -1819,7 +1903,7 @@ if(row._outer["technical_origin"] == 1) {
                                             <property name="fontWeight">bold</property>
                                             <property name="textAlign">right</property>
                                             <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF>row["company_currency_name"]</VALUE-OF>]]></text-property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>row["currency_code"]</VALUE-OF>]]></text-property>
                                         </text>
                                     </cell>
                                     <cell id="4522">
@@ -1986,34 +2070,13 @@ if(row._outer["technical_origin"] == 1) {
                                         <property name="borderRightStyle">none</property>
                                         <property name="borderTopStyle">none</property>
                                         <property name="textAlign">center</property>
-                                        <text id="4513">
-                                            <property name="marginLeft">2pt</property>
-                                            <property name="dataSet">TranslateDS</property>
-                                            <list-property name="paramBindings">
-                                                <structure>
-                                                    <property name="paramName">param_1</property>
-                                                    <simple-property-list name="expression">
-                                                        <value type="javascript">'move.journal'</value>
-                                                    </simple-property-list>
-                                                </structure>
-                                            </list-property>
-                                            <list-property name="boundDataColumns">
-                                                <structure>
-                                                    <property name="name">key</property>
-                                                    <text-property name="displayName">key</text-property>
-                                                    <expression name="expression" type="javascript">dataSetRow["message_key"]</expression>
-                                                    <property name="dataType">string</property>
-                                                </structure>
-                                                <structure>
-                                                    <property name="name">translation</property>
-                                                    <text-property name="displayName">translation</text-property>
-                                                    <expression name="expression" type="javascript">dataSetRow["translation"]</expression>
-                                                    <property name="dataType">string</property>
-                                                </structure>
-                                            </list-property>
-                                            <property name="contentType">html</property>
-                                            <text-property name="content"><![CDATA[<VALUE-OF format="dd/MM/yyyy">row._outer["date"]</VALUE-OF>]]></text-property>
-                                        </text>
+                                        <data id="4908">
+                                            <structure name="dateTimeFormat">
+                                                <property name="category">Short Date</property>
+                                                <property name="pattern">Short Date</property>
+                                            </structure>
+                                            <property name="resultSetColumn">date</property>
+                                        </data>
                                     </cell>
                                     <cell id="4493">
                                         <property name="borderBottomStyle">none</property>
@@ -2090,45 +2153,48 @@ if(row._outer["technical_origin"] == 1) {
                                         <property name="borderLeftStyle">none</property>
                                         <property name="borderRightStyle">none</property>
                                         <property name="borderTopStyle">none</property>
-                                        <data id="4677">
-                                            <structure name="numberFormat">
-                                                <property name="category">Custom</property>
-                                                <property name="pattern">###,##0.00</property>
-                                            </structure>
-                                            <property name="textAlign">right</property>
-                                            <property name="resultSetColumn">debit</property>
-                                        </data>
+                                        <text id="4911">
+                                            <list-property name="boundDataColumns">
+                                                <structure>
+                                                    <property name="name">company_currency_number_of_decimals_1</property>
+                                                    <text-property name="displayName">company_currency_number_of_decimals</text-property>
+                                                    <expression name="expression" type="javascript">row["company_currency_number_of_decimals"]</expression>
+                                                    <property name="dataType">string</property>
+                                                    <property name="allowExport">true</property>
+                                                </structure>
+                                            </list-property>
+                                            <property name="contentType">html</property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["debit"], row["company_currency_number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["company_currency_number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
+                                        </text>
                                     </cell>
                                     <cell id="4496">
                                         <property name="borderBottomStyle">none</property>
                                         <property name="borderLeftStyle">none</property>
                                         <property name="borderRightStyle">none</property>
                                         <property name="borderTopStyle">none</property>
-                                        <data id="4678">
-                                            <structure name="numberFormat">
-                                                <property name="category">Custom</property>
-                                                <property name="pattern">###,##0.00</property>
-                                            </structure>
-                                            <property name="textAlign">right</property>
-                                            <property name="resultSetColumn">credit</property>
-                                        </data>
+                                        <text id="4912">
+                                            <list-property name="boundDataColumns">
+                                                <structure>
+                                                    <property name="name">company_currency_number_of_decimals_1</property>
+                                                    <text-property name="displayName">company_currency_number_of_decimals</text-property>
+                                                    <expression name="expression" type="javascript">row["company_currency_number_of_decimals"]</expression>
+                                                    <property name="dataType">integer</property>
+                                                    <property name="allowExport">true</property>
+                                                </structure>
+                                            </list-property>
+                                            <property name="contentType">html</property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["credit"], row["company_currency_number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["company_currency_number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
+                                        </text>
                                     </cell>
                                     <cell id="4519">
                                         <property name="borderBottomStyle">none</property>
                                         <property name="borderLeftStyle">none</property>
                                         <property name="borderRightStyle">none</property>
                                         <property name="borderTopStyle">none</property>
-                                        <data id="4680">
-                                            <structure name="numberFormat">
-                                                <property name="category">Custom</property>
-                                                <property name="pattern">###,##0.00</property>
-                                            </structure>
-                                            <structure name="stringFormat">
-                                                <property name="category">Unformatted</property>
-                                            </structure>
-                                            <property name="textAlign">right</property>
-                                            <property name="resultSetColumn">currency_amount</property>
-                                        </data>
+                                        <text id="4913">
+                                            <property name="contentType">html</property>
+                                            <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(Math.abs(row["currency_amount"]), row["currency_number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["currency_number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
+                                        </text>
                                     </cell>
                                     <cell id="4523">
                                         <property name="borderBottomStyle">none</property>
@@ -2265,12 +2331,6 @@ if(row._outer["technical_origin"] == 1) {
                     <text-property name="displayName">tax_rate</text-property>
                     <expression name="expression" type="javascript">dataSetRow["tax_rate"]</expression>
                     <property name="dataType">decimal</property>
-                </structure>
-                <structure>
-                    <property name="name">reconcile_sequence</property>
-                    <text-property name="displayName">reconcile_sequence</text-property>
-                    <expression name="expression" type="javascript">dataSetRow["reconcile_sequence"]</expression>
-                    <property name="dataType">string</property>
                 </structure>
                 <structure>
                     <property name="name">origin</property>
@@ -2456,32 +2516,44 @@ if(row._outer["technical_origin"] == 1) {
                     </data>
                 </cell>
                 <cell id="4790">
-                    <data id="4794">
-                        <structure name="numberFormat">
-                            <property name="category">Fixed</property>
-                            <property name="pattern">###0.00{RoundingMode=HALF_UP}</property>
-                        </structure>
-                        <property name="resultSetColumn">total_debit</property>
-                    </data>
+                    <text id="5334">
+                        <property name="textAlign">center</property>
+                        <property name="height">0.609cm</property>
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!row["total_debit"]</expression>
+                            </structure>
+                        </list-property>
+                        <structure name="toc"/>
+                        <property name="contentType">html</property>
+                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["total_debit"], row["company_currency_number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["company_currency_number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
+                    </text>
                 </cell>
                 <cell id="4791">
-                    <data id="4795">
-                        <structure name="numberFormat">
-                            <property name="category">Fixed</property>
-                            <property name="pattern">###0.00{RoundingMode=HALF_UP}</property>
-                        </structure>
-                        <property name="resultSetColumn">total_credit</property>
-                    </data>
+                    <text id="5335">
+                        <property name="textAlign">center</property>
+                        <property name="height">0.609cm</property>
+                        <list-property name="visibility">
+                            <structure>
+                                <property name="format">all</property>
+                                <expression name="valueExpr" type="javascript">!row["total_credit"]</expression>
+                            </structure>
+                        </list-property>
+                        <structure name="toc"/>
+                        <property name="contentType">html</property>
+                        <text-property name="content"><![CDATA[<VALUE-OF>Formatter.format(row["total_credit"], row["company_currency_number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["company_currency_number_of_decimals"] || 2)+1).join("0"))</VALUE-OF>]]></text-property>
+                    </text>
                 </cell>
                 <cell id="4792">
                     <text id="4820">
                         <property name="contentType">html</property>
-                        <text-property name="content"><![CDATA[<VALUE-OF format="#,##0.00">if(row["total_credit"]>=row["total_debit"])
-{
-	row["total_credit"]-row["total_debit"]
-}else{
-	row["total_debit"]-row["total_credit"]
-}</VALUE-OF>]]></text-property>
+                        <text-property name="content"><![CDATA[<VALUE-OF>
+                        if(row["total_credit"]>=row["total_debit"]) {
+                            Formatter.format(row["total_credit"]-row["total_debit"], row["company_currency_number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["company_currency_number_of_decimals"] || 2)+1).join("0"))
+                        }else{
+                            Formatter.format(row["total_debit"]-row["total_credit"], row["company_currency_number_of_decimals"] == 0? "#,##0" : "#,##0." + Array((row["company_currency_number_of_decimals"] || 2)+1).join("0"))
+                        }</VALUE-OF>]]></text-property>
                     </text>
                 </cell>
             </row>

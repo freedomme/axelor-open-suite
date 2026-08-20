@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,35 +14,36 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.hr.service;
 
+import com.axelor.app.internal.AppFilter;
+import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.db.Period;
+import com.axelor.apps.base.db.repo.TraceBackRepository;
+import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.apps.hr.db.Employee;
 import com.axelor.apps.hr.db.EmployeeBonusMgt;
 import com.axelor.apps.hr.db.EmployeeBonusMgtLine;
 import com.axelor.apps.hr.db.HRConfig;
 import com.axelor.apps.hr.db.repo.EmployeeBonusMgtLineRepository;
 import com.axelor.apps.hr.db.repo.EmployeeBonusMgtRepository;
+import com.axelor.apps.hr.db.repo.EmployeeHRRepository;
 import com.axelor.apps.hr.db.repo.EmployeeRepository;
-import com.axelor.apps.hr.exception.IExceptionMessage;
+import com.axelor.apps.hr.exception.HumanResourceExceptionMessage;
 import com.axelor.apps.hr.service.employee.EmployeeServiceImpl;
-import com.axelor.exception.AxelorException;
-import com.axelor.exception.db.repo.TraceBackRepository;
-import com.axelor.exception.service.TraceBackService;
 import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
-import com.axelor.tool.template.TemplateMaker;
+import com.axelor.utils.template.TemplateMaker;
 import com.google.common.base.Strings;
-import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
+import jakarta.inject.Inject;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
@@ -53,6 +55,8 @@ public class EmployeeBonusService {
   @Inject EmployeeBonusMgtLineRepository employeeBonusMgtLineRepo;
 
   @Inject EmployeeServiceImpl employeeService;
+
+  @Inject EmployeeComputeDaysLeaveBonusService employeeComputeDaysLeaveBonusService;
 
   private static final char TEMPLATE_DELIMITER = '$';
 
@@ -68,7 +72,12 @@ public class EmployeeBonusService {
             .all()
             .filter("self.mainEmploymentContract.payCompany = ?1", bonus.getCompany())
             .fetch();
-    TemplateMaker maker = new TemplateMaker(Locale.FRENCH, TEMPLATE_DELIMITER, TEMPLATE_DELIMITER);
+    TemplateMaker maker =
+        new TemplateMaker(
+            bonus.getCompany().getTimezone(),
+            AppFilter.getLocale(),
+            TEMPLATE_DELIMITER,
+            TEMPLATE_DELIMITER);
     String eval;
     CompilerConfiguration conf = new CompilerConfiguration();
     ImportCustomizer customizer = new ImportCustomizer();
@@ -79,6 +88,9 @@ public class EmployeeBonusService {
 
     Integer employeeBonusStatus = EmployeeBonusMgtRepository.STATUS_CALCULATED;
     for (Employee employee : allEmployee) {
+      if (EmployeeHRRepository.isEmployeeFormerNewOrArchived(employee)) {
+        continue;
+      }
 
       // check if line is already calculated
       if (employeeStatus.get(employee) != null) {
@@ -166,7 +178,7 @@ public class EmployeeBonusService {
           formula.replace(
               hrConfig.getWorkingDaysVariableName(),
               String.valueOf(
-                  employeeService.getDaysWorkedInPeriod(
+                  employeeComputeDaysLeaveBonusService.getDaysWorkedInPeriod(
                       employee, period.getFromDate(), period.getToDate())));
     }
     if (!Strings.isNullOrEmpty(hrConfig.getTotalWorkingDaysVariableName())) {
@@ -182,7 +194,7 @@ public class EmployeeBonusService {
     if (formula.matches("(\\$\\w+\\$).+")) {
       throw new AxelorException(
           TraceBackRepository.CATEGORY_MISSING_FIELD,
-          I18n.get(IExceptionMessage.HR_CONFIG_FORMULA_VARIABLE_MISSING),
+          I18n.get(HumanResourceExceptionMessage.HR_CONFIG_FORMULA_VARIABLE_MISSING),
           hrConfig.getCompany().getName());
     }
     return formula;

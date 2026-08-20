@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,14 +14,13 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.sale.service.configurator;
 
+import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.sale.db.ConfiguratorCreator;
 import com.axelor.apps.sale.db.ConfiguratorFormula;
-import com.axelor.auth.db.User;
-import com.axelor.exception.AxelorException;
 import com.axelor.script.ScriptBindings;
 
 public interface ConfiguratorCreatorService {
@@ -39,7 +39,7 @@ public interface ConfiguratorCreatorService {
    *
    * @param creator
    */
-  void updateIndicators(ConfiguratorCreator creator);
+  void updateIndicators(ConfiguratorCreator creator) throws AxelorException;
 
   /**
    * Get the testing values in {@link ConfiguratorCreator#attributes}
@@ -58,11 +58,11 @@ public interface ConfiguratorCreatorService {
   String getConfiguratorCreatorDomain();
 
   /**
-   * Add the current user to the authorized user list
+   * Initialize configurator creator.
    *
    * @param creator
    */
-  void authorizeUser(ConfiguratorCreator creator, User user);
+  void init(ConfiguratorCreator creator);
 
   /**
    * Add required fields of Product to the formula list
@@ -77,4 +77,11 @@ public interface ConfiguratorCreatorService {
    * @param creator
    */
   void activate(ConfiguratorCreator creator);
+
+  /**
+   * Method for a quick fix on a constraint issue
+   *
+   * @param creator
+   */
+  void removeTemporalAttributesAndIndicators(ConfiguratorCreator creator);
 }

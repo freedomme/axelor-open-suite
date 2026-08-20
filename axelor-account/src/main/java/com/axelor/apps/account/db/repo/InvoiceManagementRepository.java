@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,98 +14,123 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.account.db.repo;
 
 import com.axelor.apps.account.db.Invoice;
+import com.axelor.apps.account.db.InvoicePayment;
 import com.axelor.apps.account.db.SubrogationRelease;
+import com.axelor.apps.account.exception.AccountExceptionMessage;
 import com.axelor.apps.account.service.invoice.InvoiceService;
-import com.axelor.exception.service.TraceBackService;
+import com.axelor.apps.account.service.invoice.InvoiceTermService;
+import com.axelor.apps.account.service.invoice.InvoiceToolService;
+import com.axelor.apps.base.AxelorException;
+import com.axelor.apps.base.db.repo.TraceBackRepository;
+import com.axelor.apps.base.service.administration.SequenceService;
+import com.axelor.apps.base.service.exception.TraceBackService;
+import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
-import java.math.BigDecimal;
+import jakarta.persistence.PersistenceException;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
-import javax.persistence.PersistenceException;
+import org.apache.commons.collections.CollectionUtils;
 
 public class InvoiceManagementRepository extends InvoiceRepository {
   @Override
   public Invoice copy(Invoice entity, boolean deep) {
-
-    Invoice copy = super.copy(entity, deep);
-
-    copy.setStatusSelect(STATUS_DRAFT);
-    copy.setInvoiceId(null);
-    copy.setInvoiceDate(null);
-    copy.setDueDate(null);
-    copy.setValidatedByUser(null);
-    copy.setMove(null);
-    copy.setOriginalInvoice(null);
-    copy.setCompanyInTaxTotalRemaining(BigDecimal.ZERO);
-    copy.setAmountPaid(BigDecimal.ZERO);
-    copy.setIrrecoverableStatusSelect(IRRECOVERABLE_STATUS_NOT_IRRECOUVRABLE);
-    copy.setAmountRejected(BigDecimal.ZERO);
-    copy.clearBatchSet();
-    copy.setDebitNumber(null);
-    copy.setDirectDebitManagement(null);
-    copy.setDoubtfulCustomerOk(false);
-    copy.setMove(null);
-    copy.setInterbankCodeLine(null);
-    copy.setPaymentMove(null);
-    copy.clearRefundInvoiceList();
-    copy.setRejectDate(null);
-    copy.setOriginalInvoice(null);
-    copy.setUsherPassageOk(false);
-    copy.setAlreadyPrintedOk(false);
-    copy.setCanceledPaymentSchedule(null);
-    copy.setDirectDebitAmount(BigDecimal.ZERO);
-    copy.setImportId(null);
-    copy.setPartnerAccount(null);
-    copy.setJournal(null);
-    copy.clearInvoicePaymentList();
-    copy.setPrintedPDF(null);
-    copy.setValidatedDate(null);
-    copy.setVentilatedByUser(null);
-    copy.setVentilatedDate(null);
-    copy.setPfpValidateStatusSelect(PFP_STATUS_AWAITING);
-    copy.setDecisionPfpTakenDate(null);
-    return copy;
+    try {
+      Invoice copy = super.copy(entity, deep);
+      InvoiceToolService.resetInvoiceStatusOnCopy(copy);
+      return copy;
+    } catch (Exception e) {
+      throw new PersistenceException(e);
+    }
   }
 
   @Override
   public Invoice save(Invoice invoice) {
     try {
+      List<InvoicePayment> invoicePayments = invoice.getInvoicePaymentList();
+      if (CollectionUtils.isNotEmpty(invoicePayments)) {
+        LocalDate latestPaymentDate =
+            invoicePayments.stream()
+                .filter(
+                    invoicePayment ->
+                        invoicePayment.getStatusSelect()
+                            == InvoicePaymentRepository.STATUS_VALIDATED)
+                .map(InvoicePayment::getPaymentDate)
+                .max(LocalDate::compareTo)
+                .orElse(null);
+        invoice.setPaymentDate(latestPaymentDate);
+      }
+      LocalDate nextDueDate = Beans.get(InvoiceToolService.class).getNextDueDate(invoice);
+      invoice.setNextDueDate(nextDueDate);
+      invoice.setDueDate(
+          Beans.get(InvoiceTermService.class)
+              .getDueDate(invoice.getInvoiceTermList(), nextDueDate));
       invoice = super.save(invoice);
-      Beans.get(InvoiceService.class).setDraftSequence(invoice);
+
+      InvoiceService invoiceService = Beans.get(InvoiceService.class);
+      invoiceService.setDraftSequence(invoice);
 
       return invoice;
     } catch (Exception e) {
-      throw new PersistenceException(e.getLocalizedMessage());
+      TraceBackService.traceExceptionFromSaveMethod(e);
+      throw new PersistenceException(e.getMessage(), e);
     }
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   @Override
   public Map<String, Object> populate(Map<String, Object> json, Map<String, Object> context) {
     try {
+      final String subrogationStatusSelect = "$subrogationStatusSelect";
       if (context.get("_model") != null
-          && context.get("_model").toString().contains("SubrogationRelease")) {
+          && context.get("_model").toString().equals(SubrogationRelease.class.getName())) {
         if (context.get("id") != null) {
           long id = (long) context.get("id");
           SubrogationRelease subrogationRelease =
               Beans.get(SubrogationReleaseRepository.class).find(id);
           if (subrogationRelease != null && subrogationRelease.getStatusSelect() != null) {
-            json.put("$subrogationStatusSelect", subrogationRelease.getStatusSelect());
+            json.put(subrogationStatusSelect, subrogationRelease.getStatusSelect());
           } else {
-            json.put("$subrogationStatusSelect", SubrogationReleaseRepository.STATUS_NEW);
+            json.put(subrogationStatusSelect, SubrogationReleaseRepository.STATUS_NEW);
           }
         }
       } else {
-        json.put("$subrogationStatusSelect", SubrogationReleaseRepository.STATUS_NEW);
+        json.put(subrogationStatusSelect, SubrogationReleaseRepository.STATUS_NEW);
       }
     } catch (Exception e) {
       TraceBackService.trace(e);
     }
 
     return super.populate(json, context);
+  }
+
+  @Override
+  public void remove(Invoice entity) {
+    if (entity.getOperationSubTypeSelect() == InvoiceRepository.OPERATION_SUB_TYPE_ADVANCE) {
+      if (!Beans.get(SequenceService.class).isEmptyOrDraftSequenceNumber(entity.getInvoiceId())) {
+        try {
+          throw new AxelorException(
+              TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
+              I18n.get(AccountExceptionMessage.ADVANCE_INVOICE_CAN_NOT_DELETE),
+              entity.getInvoiceId());
+        } catch (AxelorException e) {
+          throw new PersistenceException(e.getMessage(), e);
+        }
+      }
+    } else if (!entity.getStatusSelect().equals(InvoiceRepository.STATUS_CANCELED)) {
+      try {
+        throw new AxelorException(
+            TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
+            I18n.get(AccountExceptionMessage.INVOICE_CAN_NOT_DELETE),
+            entity.getInvoiceId());
+      } catch (AxelorException e) {
+        throw new PersistenceException(e.getMessage(), e);
+      }
+    }
+    super.remove(entity);
   }
 }

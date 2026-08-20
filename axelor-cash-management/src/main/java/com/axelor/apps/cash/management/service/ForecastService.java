@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,7 +14,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.cash.management.service;
 
@@ -22,10 +23,11 @@ import com.axelor.apps.base.db.Company;
 import com.axelor.apps.base.service.app.AppBaseService;
 import com.axelor.apps.cash.management.db.Forecast;
 import com.axelor.apps.cash.management.db.ForecastGenerator;
-import com.axelor.apps.cash.management.db.ForecastReason;
+import com.axelor.apps.cash.management.db.ForecastRecapLineType;
+import com.axelor.apps.cash.management.db.repo.ForecastGeneratorRepository;
 import com.axelor.apps.cash.management.db.repo.ForecastRepository;
-import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
+import jakarta.inject.Inject;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -53,11 +55,18 @@ public class ForecastService {
               forecastGenerator.getTypeSelect(),
               forecastGenerator.getAmount(),
               itDate,
-              forecastGenerator.getForecastReason(),
-              forecastGenerator.getComments(),
-              forecastGenerator.getRealizedSelect());
+              forecastGenerator.getForecastRecapLineType(),
+              forecastGenerator.getComments());
       forecastRepo.save(forecast);
-      itDate = fromDate.plusMonths(++count * forecastGenerator.getPeriodicitySelect());
+      if (forecastGenerator.getPeriodicitySelect()
+          == ForecastGeneratorRepository.FORECAST_GENERATOR_WEEKLY) {
+        itDate = fromDate.plusWeeks(++count);
+      } else if (forecastGenerator.getPeriodicitySelect()
+          == ForecastGeneratorRepository.FORECAST_GENERATOR_FORTNIGHTLY) {
+        itDate = fromDate.plusWeeks(++count * 2);
+      } else {
+        itDate = fromDate.plusMonths(++count * forecastGenerator.getPeriodicitySelect());
+      }
     }
   }
 
@@ -68,20 +77,18 @@ public class ForecastService {
       int typeSelect,
       BigDecimal amount,
       LocalDate estimatedDate,
-      ForecastReason reason,
-      String comments,
-      int realizedSelect) {
+      ForecastRecapLineType lineType,
+      String comments) {
 
     Forecast forecast = new Forecast();
     forecast.setForecastGenerator(forecastGenerator);
     forecast.setCompany(company);
     forecast.setBankDetails(bankDetails);
-    forecast.setTypeSelect(typeSelect);
     forecast.setAmount(amount);
     forecast.setEstimatedDate(estimatedDate);
-    forecast.setForecastReason(reason);
+    forecast.setForecastRecapLineType(lineType);
     forecast.setComments(comments);
-    forecast.setRealizedSelect(realizedSelect);
+    forecast.setTypeSelect(typeSelect);
 
     return forecast;
   }
@@ -90,12 +97,7 @@ public class ForecastService {
   public void reset(ForecastGenerator forecastGenerator) {
     forecastRepo
         .all()
-        .filter(
-            "self.forecastGenerator = ? AND (self.realizedSelect = ? OR (self.realizedSelect = ? AND self.estimatedDate > ?))",
-            forecastGenerator,
-            ForecastRepository.REALISED_SELECT_NO,
-            ForecastRepository.REALISED_SELECT_AUTO,
-            appBaseService.getTodayDate())
+        .filter("self.forecastGenerator = ? AND self.realizationDate IS NULL", forecastGenerator)
         .remove();
   }
 }

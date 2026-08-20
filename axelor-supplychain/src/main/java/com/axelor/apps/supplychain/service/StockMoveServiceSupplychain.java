@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,20 +14,14 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.supplychain.service;
 
+import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.stock.db.StockMove;
-import com.axelor.apps.stock.db.StockMoveLine;
-import com.axelor.exception.AxelorException;
-import java.util.List;
 
 public interface StockMoveServiceSupplychain {
-
-  public List<StockMoveLine> addSubLines(List<StockMoveLine> list);
-
-  public List<StockMoveLine> removeSubLines(List<StockMoveLine> lines);
 
   /**
    * For all lines in this stock move with quantity equal to 0, we empty the link to sale order
@@ -37,4 +32,18 @@ public interface StockMoveServiceSupplychain {
   void detachNonDeliveredStockMoveLines(StockMove stockMove);
 
   void verifyProductStock(StockMove stockMove) throws AxelorException;
+
+  public boolean isAllocatedStockMoveLineRemoved(StockMove stockMove);
+
+  public void setDefaultInvoicedPartner(StockMove stockMove);
+
+  void checkInvoiceStatus(StockMove stockMove) throws AxelorException;
+
+  public void setInvoicingStatusInvoicedDelayed(StockMove stockMove);
+
+  public void setInvoicingStatusInvoicedValidated(StockMove stockMove);
+
+  void fillRealQuantities(StockMove stockMove);
+
+  void updateFullySpreadOverLogisticalFormsFlag(StockMove stockMove);
 }

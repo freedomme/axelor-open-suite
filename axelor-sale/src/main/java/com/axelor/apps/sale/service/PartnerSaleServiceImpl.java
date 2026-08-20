@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,23 +14,35 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.sale.service;
 
+import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.db.Partner;
+import com.axelor.apps.base.db.Product;
 import com.axelor.apps.base.db.repo.PartnerRepository;
+import com.axelor.apps.base.db.repo.ProductRepository;
+import com.axelor.apps.base.db.repo.TraceBackRepository;
 import com.axelor.apps.base.service.PartnerServiceImpl;
 import com.axelor.apps.base.service.app.AppBaseService;
+import com.axelor.apps.sale.db.repo.SaleOrderRepository;
+import com.axelor.apps.sale.exception.SaleExceptionMessage;
 import com.axelor.apps.sale.service.app.AppSaleService;
 import com.axelor.db.JPA;
+import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
-import com.google.inject.Inject;
+import com.axelor.message.db.repo.MessageRepository;
+import jakarta.inject.Inject;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
-public class PartnerSaleServiceImpl extends PartnerServiceImpl {
+public class PartnerSaleServiceImpl extends PartnerServiceImpl implements PartnerSaleService {
 
   @Inject
   public PartnerSaleServiceImpl(PartnerRepository partnerRepo, AppBaseService appBaseService) {
@@ -37,64 +50,140 @@ public class PartnerSaleServiceImpl extends PartnerServiceImpl {
   }
 
   @Override
-  public List<Long> findPartnerMails(Partner partner) {
-
+  public List<Long> findMailsFromPartner(Partner partner, int emailType) {
+    List<Long> mailIdList = super.findMailsFromPartner(partner, emailType);
     if (!Beans.get(AppSaleService.class).isApp("sale")) {
-
-      return super.findPartnerMails(partner);
+      return mailIdList;
     }
-
-    List<Long> idList = new ArrayList<Long>();
-
-    idList.addAll(this.findMailsFromPartner(partner));
-    idList.addAll(this.findMailsFromSaleOrder(partner));
-
-    Set<Partner> contactSet = partner.getContactPartnerSet();
-    if (contactSet != null && !contactSet.isEmpty()) {
-      for (Partner contact : contactSet) {
-        idList.addAll(this.findMailsFromPartner(contact));
-        idList.addAll(this.findMailsFromSaleOrderContact(contact));
-      }
-    }
-    return idList;
+    mailIdList.addAll(
+        findMailsFromSaleOrder(
+            partner, emailType, partner.getIsContact() ? "contactPartner" : "clientPartner"));
+    return mailIdList;
   }
 
-  @Override
-  public List<Long> findContactMails(Partner partner) {
+  protected List<Long> findMailsFromSaleOrder(Partner partner, int emailType, String partnerField) {
+    return JPA.em()
+        .createQuery(
+            "SELECT DISTINCT email.id"
+                + " FROM Message AS email"
+                + " JOIN email.multiRelatedList AS related"
+                + " JOIN SaleOrder AS so ON so.id = related.relatedToSelectId"
+                + " JOIN Partner AS part ON part = so."
+                + partnerField
+                + " WHERE part.id = :partnerId"
+                + " AND related.relatedToSelect = :relatedToSelect"
+                + " AND email.typeSelect = :emailType"
+                + " AND email.mediaTypeSelect = :mediaType",
+            Long.class)
+        .setParameter("partnerId", partner.getId())
+        .setParameter("relatedToSelect", "com.axelor.apps.sale.db.SaleOrder")
+        .setParameter("emailType", emailType)
+        .setParameter("mediaType", MessageRepository.MEDIA_TYPE_EMAIL)
+        .getResultList();
+  }
 
-    if (!Beans.get(AppSaleService.class).isApp("sale")) {
-      return super.findContactMails(partner);
+  public List<Product> getProductBoughtByCustomer(Partner customer) {
+    String domain =
+        "self.id in (SELECT line.product.id"
+            + " FROM SaleOrderLine line join SaleOrder sale on line.saleOrder = sale"
+            + " WHERE sale.statusSelect IN ("
+            + SaleOrderRepository.STATUS_ORDER_CONFIRMED
+            + ", "
+            + SaleOrderRepository.STATUS_ORDER_COMPLETED
+            + ")"
+            + " AND sale.clientPartner.id = "
+            + customer.getId()
+            + ")";
+
+    ProductRepository productRepo = Beans.get(ProductRepository.class);
+    List<Product> productList = productRepo.all().filter(domain).fetch();
+
+    return productList;
+  }
+
+  public HashMap<String, BigDecimal> getTotalSaleQuantityAndPrice(
+      Partner customer, Product product) {
+
+    String qtySelection = "SELECT SUM(line.qty)";
+    String priceSelection = "SELECT SUM(line.exTaxTotal)";
+    String endQuery =
+        " FROM SaleOrderLine line join SaleOrder sale on line.saleOrder.id = sale.id"
+            + " WHERE sale.statusSelect IN ("
+            + SaleOrderRepository.STATUS_ORDER_CONFIRMED
+            + ", "
+            + SaleOrderRepository.STATUS_ORDER_COMPLETED
+            + ")"
+            + " AND sale.clientPartner.id = "
+            + customer.getId()
+            + " AND line.product.id = "
+            + product.getId();
+
+    BigDecimal qty =
+        JPA.em().createQuery(qtySelection + endQuery, BigDecimal.class).getSingleResult();
+    BigDecimal price =
+        JPA.em().createQuery(priceSelection + endQuery, BigDecimal.class).getSingleResult();
+
+    HashMap<String, BigDecimal> qtyAndPrice = new HashMap<String, BigDecimal>();
+    qtyAndPrice.put("qty", qty);
+    qtyAndPrice.put("price", price);
+
+    return qtyAndPrice;
+  }
+
+  public List<Map<String, Object>> averageByCustomer(
+      String averageOn, LocalDate fromDate, LocalDate toDate) throws AxelorException {
+
+    List<String> authorizedField = new ArrayList<>();
+    authorizedField.add("markup");
+    authorizedField.add("marginRate");
+
+    if (!authorizedField.contains(averageOn)) {
+      throw new AxelorException(
+          TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
+          I18n.get(SaleExceptionMessage.SALE_MANAGER_CHART_ERROR));
     }
 
-    List<Long> idList = new ArrayList<Long>();
+    List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
+    fromDate = fromDate.plusDays(1);
 
-    idList.addAll(this.findMailsFromPartner(partner));
-    idList.addAll(this.findMailsFromSaleOrderContact(partner));
+    LocalDateTime fromDateTime = fromDate.atStartOfDay();
+    LocalDateTime toDateTime = toDate.atTime(23, 59, 59);
 
-    return idList;
-  }
+    String averageSelection = "SELECT AVG(sale." + averageOn + ")";
+    String customerSelection = "SELECT sale.clientPartner.name";
+    String endQuery =
+        " FROM SaleOrder sale"
+            + " WHERE sale.statusSelect IN ("
+            + SaleOrderRepository.STATUS_ORDER_CONFIRMED
+            + ", "
+            + SaleOrderRepository.STATUS_ORDER_COMPLETED
+            + ")"
+            + " AND sale.confirmationDateTime BETWEEN :fromDateTime AND :toDateTime"
+            + " GROUP BY sale.clientPartner.name"
+            + " ORDER BY AVG("
+            + averageOn
+            + ") desc";
 
-  @SuppressWarnings("unchecked")
-  public List<Long> findMailsFromSaleOrder(Partner partner) {
-    String query =
-        "SELECT DISTINCT(email.id) FROM Message as email, SaleOrder as so, Partner as part"
-            + " WHERE part.id = "
-            + partner.getId()
-            + " AND so.clientPartner = part.id AND email.mediaTypeSelect = 2 AND "
-            + "((email.relatedTo1Select = 'com.axelor.apps.sale.db.SaleOrder' AND email.relatedTo1SelectId = so.id) "
-            + "OR (email.relatedTo2Select = 'com.axelor.apps.sale.db.SaleOrder' AND email.relatedTo2SelectId = so.id))";
-    return JPA.em().createQuery(query).getResultList();
-  }
+    List<Double> averageList =
+        JPA.em()
+            .createQuery(averageSelection + endQuery, Double.class)
+            .setParameter("toDateTime", toDateTime)
+            .setParameter("fromDateTime", fromDateTime)
+            .getResultList();
+    List<String> customerList =
+        JPA.em()
+            .createQuery(customerSelection + endQuery, String.class)
+            .setParameter("toDateTime", toDateTime)
+            .setParameter("fromDateTime", fromDateTime)
+            .getResultList();
 
-  @SuppressWarnings("unchecked")
-  public List<Long> findMailsFromSaleOrderContact(Partner partner) {
-    String query =
-        "SELECT DISTINCT(email.id) FROM Message as email, SaleOrder as so, Partner as part"
-            + " WHERE part.id = "
-            + partner.getId()
-            + " AND so.contactPartner = part.id AND email.mediaTypeSelect = 2 AND "
-            + "((email.relatedTo1Select = 'com.axelor.apps.sale.db.SaleOrder' AND email.relatedTo1SelectId = so.id) "
-            + "OR (email.relatedTo2Select = 'com.axelor.apps.sale.db.SaleOrder' AND email.relatedTo2SelectId = so.id))";
-    return JPA.em().createQuery(query).getResultList();
+    for (int i = 0; i < averageList.size(); i++) {
+      Map<String, Object> dataMap = new HashMap<String, Object>();
+      dataMap.put("_average", (Object) averageList.get(i));
+      dataMap.put("_customer", (Object) customerList.get(i));
+      dataList.add(dataMap);
+    }
+
+    return dataList;
   }
 }

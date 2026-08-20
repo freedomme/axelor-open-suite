@@ -1,4 +1,6 @@
-apply plugin: "com.axelor.app-module"
+plugins {
+	id 'com.axelor.app'
+}
 
 apply from: "../version.gradle"
 
@@ -12,6 +14,6 @@ axelor {
 }
 
 dependencies {
-	compile project(":modules:axelor-human-resource")
-	compile project(":modules:axelor-supplychain")
+	api project(":modules:axelor-human-resource")
+	api project(":modules:axelor-supplychain")
 }

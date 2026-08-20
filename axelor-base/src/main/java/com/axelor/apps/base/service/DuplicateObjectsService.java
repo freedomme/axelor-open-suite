@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,38 +14,40 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.base.service;
 
-import com.axelor.apps.base.exceptions.IExceptionMessage;
+import com.axelor.apps.base.AxelorException;
+import com.axelor.apps.base.db.Partner;
+import com.axelor.apps.base.db.repo.TraceBackRepository;
+import com.axelor.apps.base.exceptions.BaseExceptionMessage;
+import com.axelor.common.ObjectUtils;
 import com.axelor.db.JPA;
 import com.axelor.db.JpaSecurity;
 import com.axelor.db.Model;
 import com.axelor.db.mapper.Mapper;
 import com.axelor.db.mapper.Property;
-import com.axelor.exception.AxelorException;
-import com.axelor.exception.db.repo.TraceBackRepository;
 import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
 import com.axelor.meta.db.MetaField;
 import com.axelor.meta.db.repo.MetaFieldRepository;
 import com.axelor.rpc.filter.Filter;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.google.inject.persist.Transactional;
-import java.lang.invoke.MethodHandles;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import jakarta.persistence.Query;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.persistence.Query;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
 public class DuplicateObjectsService {
 
-  private static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private final Logger log = LoggerFactory.getLogger(DuplicateObjectsService.class);
   @Inject private MetaFieldRepository metaFieldRepo;
 
@@ -53,11 +56,15 @@ public class DuplicateObjectsService {
 
     List<Object> duplicateObjects = getDuplicateObject(selectedIds, modelName);
     Object originalObjct = getOriginalObject(selectedIds, modelName);
+
+    managePartnerAccountingSituations(duplicateObjects, originalObjct);
+    managePartnerAddresses(duplicateObjects, originalObjct);
+
     List<MetaField> allField =
         metaFieldRepo
             .all()
             .filter(
-                "(relationship = 'ManyToOne' AND typeName = ?1) OR (relationship = 'ManyToMany' AND (typeName = ?1 OR metaModel.name =?1))",
+                "((relationship = 'ManyToOne' AND typeName = ?1) OR (relationship = 'ManyToMany' AND (typeName = ?1 OR metaModel.name =?1))) AND metaModel.tableName IS NOT NULL",
                 modelName)
             .fetch();
     for (MetaField metaField : allField) {
@@ -113,10 +120,33 @@ public class DuplicateObjectsService {
         }
       }
     }
+    mergeDuplicates(originalObjct, duplicateObjects);
     JPA.em().flush();
     JPA.em().clear();
     for (Object obj : getDuplicateObject(selectedIds, modelName)) {
       JPA.em().remove(obj);
+    }
+  }
+
+  protected void mergeDuplicates(Object originalObjct, List<Object> duplicateObjects) {
+    Mapper mapper = Mapper.of(originalObjct.getClass());
+
+    for (Property property : mapper.getProperties()) {
+      final String fieldName = property.getName();
+      final Object value = mapper.get(originalObjct, fieldName);
+
+      if (ObjectUtils.notEmpty(value) || property.isPrimary() || property.isVersion()) {
+        continue;
+      }
+
+      for (Object duplicateObject : duplicateObjects) {
+        Object duplicateObjFieldValue = mapper.get(duplicateObject, fieldName);
+        if (ObjectUtils.notEmpty(duplicateObjFieldValue)) {
+          mapper.set(originalObjct, fieldName, duplicateObjFieldValue);
+          mapper.set(duplicateObject, fieldName, null);
+          break;
+        }
+      }
     }
   }
 
@@ -125,8 +155,7 @@ public class DuplicateObjectsService {
     Query originalObj =
         JPA.em().createQuery("SELECT self FROM " + modelName + " self WHERE self.id = :ids");
     originalObj.setParameter("ids", selectedIds.get(0));
-    Object originalObjct = originalObj.getSingleResult();
-    return originalObjct;
+    return originalObj.getSingleResult();
   }
 
   @Transactional
@@ -134,8 +163,7 @@ public class DuplicateObjectsService {
     Query duplicateObj =
         JPA.em().createQuery("SELECT self FROM " + modelName + " self WHERE self.id IN (:ids)");
     duplicateObj.setParameter("ids", selectedIds.subList(1, selectedIds.size()));
-    List<Object> duplicateObjects = duplicateObj.getResultList();
-    return duplicateObjects;
+    return duplicateObj.getResultList();
   }
 
   @Transactional
@@ -143,8 +171,7 @@ public class DuplicateObjectsService {
     Query duplicateObj =
         JPA.em().createQuery("SELECT self FROM " + modelName + " self WHERE self.id IN (:ids)");
     duplicateObj.setParameter("ids", selectedIds);
-    List<Object> duplicateObjects = duplicateObj.getResultList();
-    return duplicateObjects;
+    return duplicateObj.getResultList();
   }
 
   @Transactional
@@ -164,11 +191,9 @@ public class DuplicateObjectsService {
                       + " self WHERE self.id = :id");
     }
     selectedObj.setParameter("id", id);
-    Object selectedObject = selectedObj.getSingleResult();
-    return selectedObject;
+    return selectedObj.getSingleResult();
   }
 
-  @SuppressWarnings("unchecked")
   public Filter getJpaSecurityFilter(Class<? extends Model> beanClass) {
 
     JpaSecurity jpaSecurity = Beans.get(JpaSecurity.class);
@@ -183,7 +208,7 @@ public class DuplicateObjectsService {
       Set<String> fieldSet, Class<? extends Model> modelClass, String filter)
       throws AxelorException {
     if (fieldSet == null || fieldSet.isEmpty()) {
-      return null;
+      return Collections.emptyList();
     }
 
     String concatedFields = concatFields(modelClass, fieldSet);
@@ -196,7 +221,7 @@ public class DuplicateObjectsService {
 
   /*
    * get all records for duplicate records
-   */ private String concatFields(Class<?> modelClass, Set<String> fieldSet)
+   */ protected String concatFields(Class<?> modelClass, Set<String> fieldSet)
       throws AxelorException {
 
     StringBuilder fields = new StringBuilder("LOWER(concat(");
@@ -209,14 +234,14 @@ public class DuplicateObjectsService {
       if (property == null) {
         throw new AxelorException(
             TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
-            I18n.get(IExceptionMessage.GENERAL_8),
+            I18n.get(BaseExceptionMessage.GENERAL_8),
             field,
             modelClass.getSimpleName());
       }
       if (property.isCollection()) {
         throw new AxelorException(
             TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
-            I18n.get(IExceptionMessage.GENERAL_9),
+            I18n.get(BaseExceptionMessage.GENERAL_9),
             field);
       }
       if (count != 0) {
@@ -235,7 +260,7 @@ public class DuplicateObjectsService {
     return fields.toString();
   }
 
-  private String createSubQuery(Class<?> modelClass, String filter, String concatedFields) {
+  protected String createSubQuery(Class<?> modelClass, String filter, String concatedFields) {
 
     StringBuilder queryBuilder = new StringBuilder("SELECT ");
     queryBuilder.append(concatedFields);
@@ -276,16 +301,54 @@ public class DuplicateObjectsService {
     }
 
     String query = queryBuilder.toString();
-    ;
 
     log.debug("Final query prepared: {}", query);
 
     Query finalQuery = JPA.em().createQuery(query);
 
     for (int i = 0; i < params.length; i++) {
-      finalQuery.setParameter(i, params[i]);
+      finalQuery.setParameter(i + 1, params[i]);
     }
 
     return finalQuery.getResultList();
+  }
+
+  @SuppressWarnings("unchecked")
+  protected void managePartnerAccountingSituations(
+      List<Object> duplicateObjects, Object originalObject) {
+
+    if (originalObject instanceof Partner) {
+      Partner partner = (Partner) originalObject;
+      Query query =
+          JPA.em()
+              .createQuery(
+                  "SELECT DISTINCT self.company.id FROM AccountingSituation self WHERE self.partner = :partner AND self.company IS NOT NULL");
+      query.setParameter("partner", partner);
+      List<Long> companyIds = query.getResultList();
+      if (CollectionUtils.isEmpty(companyIds)) {
+        return;
+      }
+      Query deleteQuery =
+          JPA.em()
+              .createQuery(
+                  "DELETE FROM AccountingSituation self WHERE self.partner IN (:duplicates) AND self.company.id IN (:companyIds)");
+      deleteQuery.setParameter("duplicates", duplicateObjects);
+      deleteQuery.setParameter("companyIds", companyIds);
+      deleteQuery.executeUpdate();
+    }
+  }
+
+  protected void managePartnerAddresses(List<Object> duplicateObjects, Object originalObject) {
+    if (!(originalObject instanceof Partner) || CollectionUtils.isEmpty(duplicateObjects)) {
+      return;
+    }
+    JPA.em()
+        .createQuery(
+            "UPDATE com.axelor.apps.base.db.PartnerAddress self"
+                + " SET self.isDefaultAddr = false"
+                + " WHERE self.partner IN (:duplicates)"
+                + " AND self.isDefaultAddr = true")
+        .setParameter("duplicates", duplicateObjects)
+        .executeUpdate();
   }
 }

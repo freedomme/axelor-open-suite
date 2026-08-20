@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,7 +14,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.stock.report;
 
@@ -28,17 +29,23 @@ public interface ITranslation {
   public static final String STOCK_LOCATION_LOCATION = /*$$(*/ "StockLocation.location"; /*)*/
   public static final String STOCK_LOCATION_TOTAL_SALE_VALUE = /*$$(*/
       "StockLocation.totalSaleValue"; /*)*/
+  public static final String STOCK_LOCATION_TOTAL_PURCHASE_VALUE = /*$$(*/
+      "StockLocation.totalPurchaseValue"; /*)*/
   public static final String STOCK_LOCATION_TOTAL_ACCOUNTING_VALUE = /*$$(*/
       "StockLocation.totalAccountingValue"; /*)*/
   public static final String STOCK_LOCATION_TOTAL_WAP_VALUE = /*$$(*/
       "StockLocation.totalWapValue"; /*)*/
   public static final String STOCK_LOCATION_LOCATION_TOTAL_CONTENT = /*$$(*/
       "StockLocation.locationTotalContent"; /*)*/
+  public static final String STOCK_LOCATION_LOCATION_AND_SUB_LOCATIONS_TOTAL_CONTENT = /*$$(*/
+      "StockLocation.locationAndSubLocationsTotalContent"; /*)*/
   public static final String STOCK_LOCATION_PRODUCT_NAME = /*$$(*/
       "StockLocation.productName"; /*)*/
   public static final String STOCK_LOCATION_CODE = /*$$(*/ "StockLocation.code"; /*)*/
   public static final String STOCK_LOCATION_QTY_UNIT = /*$$(*/ "StockLocation.qtyUnit"; /*)*/
   public static final String STOCK_LOCATION_SALE_VALUE = /*$$(*/ "StockLocation.saleValue"; /*)*/
+  public static final String STOCK_LOCATION_PURCHASE_VALUE = /*$$(*/
+      "StockLocation.purchaseValue"; /*)*/
   public static final String STOCK_LOCATION_ACCOUNTING_VALUE = /*$$(*/
       "StockLocation.accountingValue"; /*)*/
   public static final String STOCK_LOCATION_WAP_VALUE = /*$$(*/ "StockLocation.wapValue"; /*)*/
@@ -48,7 +55,6 @@ public interface ITranslation {
       "StockLocation.detailsByStockLocation"; /*)*/
 
   public static final String INVENTORY_TITLE = /*$$(*/ "Inventory.title"; /*)*/
-  public static final String INVENTORY_NAME = /*$$(*/ "Inventory.name"; /*)*/
   public static final String INVENTORY_BARCODE = /*$$(*/ "Inventory.barcode"; /*)*/
   public static final String INVENTORY_DATE = /*$$(*/ "Inventory.date"; /*)*/
   public static final String INVENTORY_STOCK_LOCATION = /*$$(*/ "Inventory.stockLocation"; /*)*/
@@ -71,6 +77,8 @@ public interface ITranslation {
   public static final String INVENTORY_FROM_RACK = /*$$(*/ "Inventory.fromRack"; /*)*/
   public static final String INVENTORY_TO_RACK = /*$$(*/ "Inventory.toRack"; /*)*/
   public static final String INVENTORY_CATEGORY = /*$$(*/ "Inventory.category"; /*)*/
+  public static final String INVENTORY_LINE_STOCK_LOCATION = /*$$(*/
+      "Inventory.lineStockLocation"; /*)*/
 
   public static final String STOCK_MOVE_INTERNAL_MOVE = /*$$(*/ "StockMove.internalMove"; /*)*/
   public static final String STOCK_MOVE_DELIVERY_ORDER = /*$$(*/ "StockMove.deliveryOrder"; /*)*/
@@ -102,6 +110,12 @@ public interface ITranslation {
   public static final String STOCK_MOVE_SUPPLIER_PARTNER_SEQ = /*$$(*/
       "StockMove.supplierPartnerSeq"; /*)*/
   public static final String STOCK_MOVE_NET_MASS = /*$$(*/ "StockMove.netMass"; /*)*/
+  public static final String STOCK_MOVE_LINE_UNIT_PRICE = /*$$(*/ "StockMove.unitPrice"; /*)*/
+  public static final String STOCK_MOVE_ORDER_DATE = /*$$(*/ "StockMove.orderDate"; /*)*/
+  public static final String STOCK_MOVE_IS_ADR = /*$$(*/ "StockMove.isAdr"; /*)*/
+  public static final String STOCK_MOVE_IS_ADR_INFO = /*$$(*/ "StockMove.isAdrInfo"; /*)*/
+  public static final String STOCK_MOVE_LIMITED_QTY = /*$$(*/ "StockMove.limitedQty"; /*)*/
+  public static final String STOCK_MOVE_WEIGHT = /*$$(*/ "StockMove.weight"; /*)*/
 
   // PickingStockMove
   public static final String STOCK_MOVE_PICKING_ORDER = /*$$(*/ "StockMove.pickingOrder"; /*)*/

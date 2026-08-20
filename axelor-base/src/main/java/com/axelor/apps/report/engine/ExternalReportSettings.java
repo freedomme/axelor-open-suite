@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,17 +14,19 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.report.engine;
 
 import com.axelor.app.AppSettings;
-import com.axelor.app.internal.AppFilter;
-import com.axelor.apps.tool.net.URLService;
-import com.axelor.exception.AxelorException;
-import com.axelor.exception.db.repo.TraceBackRepository;
+import com.axelor.apps.base.AxelorException;
+import com.axelor.apps.base.db.repo.TraceBackRepository;
+import com.axelor.apps.base.exceptions.BaseExceptionMessage;
+import com.axelor.apps.base.service.ReportingTool;
+import com.axelor.file.temp.TempFiles;
 import com.axelor.i18n.I18n;
-import com.axelor.meta.MetaFiles;
+import com.axelor.utils.helpers.net.UrlHelper;
+import com.google.common.base.Strings;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.invoke.MethodHandles;
@@ -37,13 +40,17 @@ public class ExternalReportSettings extends ReportSettings {
 
   protected static String BIRT_PATH = "birt";
   protected String url = "";
-  protected String birtViewerUrl = null;;
+  protected String birtViewerUrl = null;
 
   public ExternalReportSettings(String rptdesign, String outputName) {
 
     super(rptdesign, outputName);
 
-    this.addAxelorReportPath(rptdesign).addParam("__locale", AppFilter.getLocale().toString());
+    String localeCode = (String) this.params.get("__locale");
+    if (Strings.isNullOrEmpty(localeCode)) {
+      localeCode = ReportingTool.getCompanyLocale().toString();
+      this.addAxelorReportPath(rptdesign).addParam("__locale", localeCode);
+    }
   }
 
   @Override
@@ -54,19 +61,19 @@ public class ExternalReportSettings extends ReportSettings {
     try {
       this.getUrl();
 
-      String urlNotExist = URLService.notExist(url.toString());
+      String urlNotExist = UrlHelper.notExist(url.toString());
       if (urlNotExist != null) {
         throw new AxelorException(
             TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
-            I18n.get(com.axelor.apps.base.exceptions.IExceptionMessage.BIRT_EXTERNAL_REPORT_NO_URL),
+            I18n.get(BaseExceptionMessage.BIRT_EXTERNAL_REPORT_NO_URL),
             birtViewerUrl);
       }
 
-      final Path tmpFile = MetaFiles.createTempFile(null, "");
+      final Path tmpFile = TempFiles.createTempFile(null, "");
 
       this.output = tmpFile.toFile();
 
-      URLService.fileDownload(this.output, url, "", outputName);
+      UrlHelper.fileDownload(this.output, url, "", outputName);
 
       this.attach();
 
@@ -93,12 +100,16 @@ public class ExternalReportSettings extends ReportSettings {
     return this.url;
   }
 
-  private String computeParam(String param) throws UnsupportedEncodingException {
-
-    return "&" + param + "=" + URLEncoder.encode(params.get(param).toString(), "UTF-8");
+  protected String computeParam(String param) throws UnsupportedEncodingException {
+    Object paramValue = params.get(param);
+    if (paramValue != null) {
+      return "&" + param + "=" + URLEncoder.encode(paramValue.toString(), "UTF-8");
+    } else {
+      return "";
+    }
   }
 
-  private ReportSettings addAxelorReportPath(String rptdesign) {
+  protected ReportSettings addAxelorReportPath(String rptdesign) {
 
     AppSettings appsSettings = AppSettings.get();
 

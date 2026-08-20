@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,62 +14,38 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.supplychain.web;
 
+import com.axelor.apps.base.ResponseMessageType;
 import com.axelor.apps.base.db.Company;
-import com.axelor.apps.sale.db.SaleOrder;
+import com.axelor.apps.base.db.repo.PartnerLinkTypeRepository;
+import com.axelor.apps.base.service.PartnerLinkService;
+import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.apps.stock.db.StockMove;
+import com.axelor.apps.stock.db.repo.StockMoveRepository;
+import com.axelor.apps.stock.service.LogisticalFormCreateService;
 import com.axelor.apps.supplychain.db.SupplyChainConfig;
-import com.axelor.apps.supplychain.exception.IExceptionMessage;
-import com.axelor.apps.supplychain.service.SaleOrderReservedQtyService;
-import com.axelor.apps.supplychain.service.SaleOrderStockService;
+import com.axelor.apps.supplychain.exception.SupplychainExceptionMessage;
+import com.axelor.apps.supplychain.service.StockMoveReservedQtyService;
 import com.axelor.apps.supplychain.service.StockMoveServiceSupplychain;
 import com.axelor.apps.supplychain.service.app.AppSupplychainService;
 import com.axelor.apps.supplychain.service.config.SupplyChainConfigService;
-import com.axelor.exception.service.TraceBackService;
 import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
 import com.axelor.rpc.ActionRequest;
 import com.axelor.rpc.ActionResponse;
-import java.util.Optional;
 
 public class StockMoveController {
-
-  public void addSubLines(ActionRequest request, ActionResponse response) {
-    try {
-      StockMove stockMove = request.getContext().asType(StockMove.class);
-      response.setValue(
-          "stockMoveLineList",
-          Beans.get(StockMoveServiceSupplychain.class)
-              .addSubLines(stockMove.getStockMoveLineList()));
-    } catch (Exception e) {
-      TraceBackService.trace(response, e);
-      response.setReload(true);
-    }
-  }
-
-  public void removeSubLines(ActionRequest request, ActionResponse response) {
-    try {
-      StockMove stockMove = request.getContext().asType(StockMove.class);
-      response.setValue(
-          "stockMoveLineList",
-          Beans.get(StockMoveServiceSupplychain.class)
-              .removeSubLines(stockMove.getStockMoveLineList()));
-    } catch (Exception e) {
-      TraceBackService.trace(response, e);
-      response.setReload(true);
-    }
-  }
 
   public void verifyProductStock(ActionRequest request, ActionResponse response) {
     try {
       StockMove stockMove = request.getContext().asType(StockMove.class);
       if (stockMove.getPickingIsEdited() && !stockMove.getAvailabilityRequest()) {
         response.setValue("availabilityRequest", true);
-        response.setFlash(
-            I18n.get(IExceptionMessage.STOCK_MOVE_AVAILABILITY_REQUEST_NOT_UPDATABLE));
+        response.setInfo(
+            I18n.get(SupplychainExceptionMessage.STOCK_MOVE_AVAILABILITY_REQUEST_NOT_UPDATABLE));
         return;
       }
       Beans.get(StockMoveServiceSupplychain.class).verifyProductStock(stockMove);
@@ -80,9 +57,8 @@ public class StockMoveController {
 
   /**
    * Called from stock move form view, on available qty boolean change. Only called if the user
-   * accepted to allocate everything. Call {@link SaleOrderStockService#findSaleOrder(StockMove)} to
-   * fetch related sale order then {@link SaleOrderReservedQtyService#allocateAll(SaleOrder)} to
-   * allocate everything in sale order.
+   * accepted to allocate everything. Call {@link
+   * StockMoveReservedQtyService#allocateAll(StockMove)}.
    *
    * @param request
    * @param response
@@ -102,14 +78,102 @@ public class StockMoveController {
           || !supplyChainConfig.getAutoAllocateOnAvailabilityRequest()) {
         return;
       }
-      Optional<SaleOrder> saleOrderOpt =
-          Beans.get(SaleOrderStockService.class).findSaleOrder(stockMove);
-      if (saleOrderOpt.isPresent()) {
-        Beans.get(SaleOrderReservedQtyService.class).allocateAll(saleOrderOpt.get());
-      }
+      Beans.get(StockMoveReservedQtyService.class).allocateAll(stockMove);
     } catch (Exception e) {
       TraceBackService.trace(response, e);
+    } finally {
       response.setReload(true);
+    }
+  }
+
+  public void isAllocatedStockMoveLineRemoved(ActionRequest request, ActionResponse response) {
+    StockMove stockMove = request.getContext().asType(StockMove.class);
+    if (stockMove.getId() != null
+        && Beans.get(StockMoveServiceSupplychain.class)
+            .isAllocatedStockMoveLineRemoved(stockMove)) {
+      response.setValue("stockMoveLineList", stockMove.getStockMoveLineList());
+      response.setInfo(
+          I18n.get(SupplychainExceptionMessage.ALLOCATED_STOCK_MOVE_LINE_DELETED_ERROR));
+    }
+  }
+
+  /**
+   * Called from stock move form view, on delivered partner select. Call {@link
+   * PartnerLinkService#computePartnerFilter}
+   *
+   * @param request
+   * @param response
+   */
+  public void setInvoicedPartnerDomain(ActionRequest request, ActionResponse response) {
+    try {
+      StockMove stockMove = request.getContext().asType(StockMove.class);
+      String strFilter =
+          Beans.get(PartnerLinkService.class)
+              .computePartnerFilter(
+                  stockMove.getPartner(), PartnerLinkTypeRepository.TYPE_SELECT_INVOICED_TO);
+
+      response.setAttr("invoicedPartner", "domain", strFilter);
+    } catch (Exception e) {
+      TraceBackService.trace(response, e);
+    }
+  }
+
+  public void setDefaultInvoicedPartner(ActionRequest request, ActionResponse response) {
+    try {
+      StockMove stockMove = request.getContext().asType(StockMove.class);
+      Beans.get(StockMoveServiceSupplychain.class).setDefaultInvoicedPartner(stockMove);
+      response.setValues(stockMove);
+    } catch (Exception e) {
+      TraceBackService.trace(response, e);
+    }
+  }
+
+  public void checkInvoiceStatus(ActionRequest request, ActionResponse response) {
+    try {
+      StockMove stockMove = request.getContext().asType(StockMove.class);
+      Beans.get(StockMoveServiceSupplychain.class).checkInvoiceStatus(stockMove);
+    } catch (Exception e) {
+      TraceBackService.trace(response, e, ResponseMessageType.WARNING);
+    }
+  }
+
+  public void setInvoicingStatusInvoicedDelayed(ActionRequest request, ActionResponse response) {
+    StockMove stockMove = request.getContext().asType(StockMove.class);
+    Beans.get(StockMoveServiceSupplychain.class).setInvoicingStatusInvoicedDelayed(stockMove);
+    response.setReload(true);
+  }
+
+  public void setInvoicingStatusInvoicedValidated(ActionRequest request, ActionResponse response) {
+    StockMove stockMove = request.getContext().asType(StockMove.class);
+    Beans.get(StockMoveServiceSupplychain.class).setInvoicingStatusInvoicedValidated(stockMove);
+    response.setReload(true);
+  }
+
+  public void fillRealQuantities(ActionRequest request, ActionResponse response) {
+    try {
+      StockMove stockMove = request.getContext().asType(StockMove.class);
+      stockMove = Beans.get(StockMoveRepository.class).find(stockMove.getId());
+      Beans.get(StockMoveServiceSupplychain.class).fillRealQuantities(stockMove);
+      response.setReload(true);
+    } catch (Exception e) {
+      TraceBackService.trace(response, e);
+    }
+  }
+
+  public void createLogisticalForm(ActionRequest request, ActionResponse response) {
+    try {
+      StockMove stockMove = request.getContext().asType(StockMove.class);
+      if (stockMove.getId() == null
+          || stockMove.getTypeSelect() != StockMoveRepository.TYPE_OUTGOING
+          || stockMove.getPartner() == null
+          || stockMove.getLogisticalForm() != null) {
+        return;
+      }
+      stockMove = Beans.get(StockMoveRepository.class).find(stockMove.getId());
+      Beans.get(LogisticalFormCreateService.class).createLogisticalFormFromStockMove(stockMove);
+      response.setReload(true);
+    } catch (Exception e) {
+      TraceBackService.trace(response, e);
     }
   }
 }

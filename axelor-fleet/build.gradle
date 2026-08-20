@@ -1,4 +1,6 @@
-apply plugin: "com.axelor.app-module"
+plugins {
+	id 'com.axelor.app'
+}
 
 apply from: "../version.gradle"
 
@@ -12,5 +14,5 @@ axelor {
 }
 
 dependencies {
-	compile project(":modules:axelor-base")
+	api project(":modules:axelor-base")
 }

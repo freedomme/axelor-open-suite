@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,29 +14,26 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.base.db.repo;
 
+import com.axelor.apps.base.db.BarcodeTypeConfig;
 import com.axelor.apps.base.db.Product;
 import com.axelor.apps.base.service.BarcodeGeneratorService;
 import com.axelor.apps.base.service.ProductService;
 import com.axelor.apps.base.service.app.AppBaseService;
-import com.axelor.apps.tool.service.TranslationService;
-import com.axelor.exception.AxelorException;
+import com.axelor.apps.base.service.exception.TraceBackService;
+import com.axelor.apps.base.service.observer.ProductFireService;
 import com.axelor.inject.Beans;
-import com.axelor.meta.MetaFiles;
 import com.axelor.meta.db.MetaFile;
+import com.axelor.utils.service.TranslationService;
 import com.google.common.base.Strings;
-import com.google.inject.Inject;
-import java.io.IOException;
-import java.io.InputStream;
-import javax.persistence.PersistenceException;
-import javax.validation.ValidationException;
+import jakarta.inject.Inject;
+import jakarta.persistence.PersistenceException;
+import java.util.Map;
 
 public class ProductBaseRepository extends ProductRepository {
-
-  @Inject private MetaFiles metaFiles;
 
   @Inject protected AppBaseService appBaseService;
 
@@ -45,16 +43,18 @@ public class ProductBaseRepository extends ProductRepository {
 
   @Inject protected BarcodeGeneratorService barcodeGeneratorService;
 
+  @Inject protected ProductFireService productFireService;
+
   @Override
   public Product save(Product product) {
-
     try {
       if (appBaseService.getAppBase().getGenerateProductSequence()
           && Strings.isNullOrEmpty(product.getCode())) {
-        product.setCode(Beans.get(ProductService.class).getSequence());
+        product.setCode(Beans.get(ProductService.class).getSequence(product));
       }
     } catch (Exception e) {
-      throw new PersistenceException(e.getLocalizedMessage());
+      TraceBackService.traceExceptionFromSaveMethod(e);
+      throw new PersistenceException(e.getMessage(), e);
     }
 
     product.setFullName(String.format(FULL_NAME_FORMAT, product.getCode(), product.getName()));
@@ -68,32 +68,29 @@ public class ProductBaseRepository extends ProductRepository {
           FULL_NAME_FORMAT, product.getCode(), product.getName());
     }
 
+    if (Strings.isNullOrEmpty(product.getSerialNumber())) {
+      product.setSerialNumber(product.getCode());
+    }
+
     product = super.save(product);
+
+    // Barcode generation
     if (product.getBarCode() == null
         && appBaseService.getAppBase().getActivateBarCodeGeneration()) {
-      try {
-        boolean addPadding = false;
-        InputStream inStream;
-        if (!appBaseService.getAppBase().getEditProductBarcodeType()) {
-          inStream =
-              barcodeGeneratorService.createBarCode(
-                  product.getSerialNumber(),
-                  appBaseService.getAppBase().getBarcodeTypeConfig(),
-                  addPadding);
-        } else {
-          inStream =
-              barcodeGeneratorService.createBarCode(
-                  product.getSerialNumber(), product.getBarcodeTypeConfig(), addPadding);
-        }
-        if (inStream != null) {
-          MetaFile barcodeFile =
-              metaFiles.upload(inStream, String.format("ProductBarCode%d.png", product.getId()));
-          product.setBarCode(barcodeFile);
-        }
-      } catch (IOException e) {
-        e.printStackTrace();
-      } catch (AxelorException e) {
-        throw new ValidationException(e.getMessage());
+      boolean addPadding = false;
+      BarcodeTypeConfig barcodeTypeConfig = product.getBarcodeTypeConfig();
+      if (!appBaseService.getAppBase().getEditProductBarcodeType()) {
+        barcodeTypeConfig = appBaseService.getAppBase().getBarcodeTypeConfig();
+      }
+      MetaFile barcodeFile =
+          barcodeGeneratorService.createBarCode(
+              product.getId(),
+              "ProductBarCode%d.png",
+              product.getSerialNumber(),
+              barcodeTypeConfig,
+              addPadding);
+      if (barcodeFile != null) {
+        product.setBarCode(barcodeFile);
       }
     }
     return super.save(product);
@@ -103,7 +100,13 @@ public class ProductBaseRepository extends ProductRepository {
   public Product copy(Product product, boolean deep) {
     Product copy = super.copy(product, deep);
     Beans.get(ProductService.class).copyProduct(product, copy);
-
+    Beans.get(ProductService.class).copyProductCompanies(product.getProductCompanyList(), copy);
     return copy;
+  }
+
+  @Override
+  public Map<String, Object> populate(Map<String, Object> json, Map<String, Object> context) {
+    productFireService.populate(json, context);
+    return super.populate(json, context);
   }
 }

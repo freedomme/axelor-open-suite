@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,28 +14,38 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.sale.service.configurator;
 
+import com.axelor.apps.base.AxelorException;
+import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.apps.sale.db.ConfiguratorCreator;
 import com.axelor.apps.sale.db.ConfiguratorFormula;
+import com.axelor.common.StringUtils;
 import com.axelor.data.Listener;
 import com.axelor.data.xml.XMLImporter;
 import com.axelor.db.Model;
-import com.axelor.exception.AxelorException;
+import com.axelor.db.mapper.Mapper;
 import com.axelor.meta.MetaFiles;
 import com.axelor.meta.db.MetaJsonField;
 import com.google.common.io.Files;
-import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
+import jakarta.inject.Inject;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.apache.xmlbeans.impl.common.IOUtil;
 
@@ -48,8 +59,16 @@ public class ConfiguratorCreatorImportServiceImpl implements ConfiguratorCreator
     this.configuratorCreatorService = configuratorCreatorService;
   }
 
-  private static final String CONFIG_FILE_PATH =
+  protected static final String CONFIG_FILE_PATH =
       "/data-import/import-configurator-creator-config.xml";
+
+  /**
+   * MetaJsonField expression fields that may contain attribute name references and must be updated
+   * after import. Other string fields (title, help, widget, model, etc.) must not be modified.
+   */
+  protected static final Set<String> EXPRESSION_FIELDS =
+      Set.of(
+          "showIf", "hideIf", "requiredIf", "readonlyIf", "domain", "defaultValue", "widgetAttrs");
 
   @Transactional(rollbackOn = {Exception.class})
   @Override
@@ -61,15 +80,30 @@ public class ConfiguratorCreatorImportServiceImpl implements ConfiguratorCreator
   @Override
   public String importConfiguratorCreators(String filePath, String configFilePath)
       throws IOException {
+    Path path = MetaFiles.getPath(filePath);
+    try (InputStream fileInPutStream = new FileInputStream(path.toFile())) {
+      return importConfiguratorCreators(fileInPutStream, configFilePath);
+    }
+  }
+
+  @Transactional(rollbackOn = {Exception.class})
+  @Override
+  public String importConfiguratorCreators(InputStream xmlInputStream) throws IOException {
+    return importConfiguratorCreators(xmlInputStream, CONFIG_FILE_PATH);
+  }
+
+  @Transactional(rollbackOn = {Exception.class})
+  @Override
+  public String importConfiguratorCreators(InputStream xmlInputStream, String configFilePath)
+      throws IOException {
     InputStream inputStream = this.getClass().getResourceAsStream(configFilePath);
     File configFile = File.createTempFile("config", ".xml");
     FileOutputStream fout = new FileOutputStream(configFile);
     IOUtil.copyCompletely(inputStream, fout);
 
-    Path path = MetaFiles.getPath(filePath);
     File tempDir = Files.createTempDir();
     File importFile = new File(tempDir, "configurator-creator.xml");
-    Files.copy(path.toFile(), importFile);
+    FileUtils.copyInputStreamToFile(xmlInputStream, importFile);
 
     XMLImporter importer = new XMLImporter(configFile.getAbsolutePath(), tempDir.getAbsolutePath());
     final StringBuilder importLog = new StringBuilder();
@@ -116,28 +150,73 @@ public class ConfiguratorCreatorImportServiceImpl implements ConfiguratorCreator
   protected void completeAfterImport(ConfiguratorCreator creator) throws AxelorException {
     fixAttributesName(creator);
     configuratorCreatorService.updateAttributes(creator);
+    configuratorCreatorService.removeTemporalAttributesAndIndicators(creator);
     configuratorCreatorService.updateIndicators(creator);
   }
 
-  /**
-   * When exported, attribute name finish with '_XX' where XX is the id of the creator. After
-   * importing, we need to fix these values.
-   *
-   * @param creator
-   * @throws AxelorException
-   */
-  protected void fixAttributesName(ConfiguratorCreator creator) throws AxelorException {
+  @Override
+  public void fixAttributesName(ConfiguratorCreator creator) throws AxelorException {
     List<MetaJsonField> attributes = creator.getAttributes();
     if (attributes == null) {
       return;
     }
     for (MetaJsonField attribute : attributes) {
       String name = attribute.getName();
-      if (name != null && name.contains("_")) {
-        attribute.setName(name.substring(0, name.lastIndexOf('_')) + '_' + creator.getId());
+      if (name != null) {
+        name = name.replace("$AXELORTMP", "");
+        if (name.contains("_")) {
+          attribute.setName(name.substring(0, name.lastIndexOf('_')) + '_' + creator.getId());
+        }
       }
+      updateOtherFieldsInAttribute(creator, attribute);
       updateAttributeNameInFormulas(creator, name, attribute.getName());
     }
+  }
+
+  /**
+   * Update the configurator id in other fields of the attribute.
+   *
+   * @param creator
+   * @param attribute attribute to update
+   */
+  protected void updateOtherFieldsInAttribute(
+      ConfiguratorCreator creator, MetaJsonField attribute) {
+    try {
+      List<Field> fieldsToUpdate =
+          Arrays.stream(attribute.getClass().getDeclaredFields())
+              .filter(field -> EXPRESSION_FIELDS.contains(field.getName()))
+              .collect(Collectors.toList());
+      for (Field field : fieldsToUpdate) {
+        Mapper mapper = Mapper.of(attribute.getClass());
+        Method getter = mapper.getGetter(field.getName());
+        String fieldString = (String) getter.invoke(attribute);
+
+        if (fieldString != null && fieldString.contains("_")) {
+          String updatedFieldString = updateFieldIds(fieldString, creator.getId());
+          Method setter = mapper.getSetter(field.getName());
+          setter.invoke(attribute, updatedFieldString);
+        }
+      }
+    } catch (Exception e) {
+      TraceBackService.trace(e);
+    }
+  }
+
+  protected String updateFieldIds(String fieldString, Long id) {
+
+    Pattern attributePattern = Pattern.compile("\\w+_\\d+");
+    Matcher matcher = attributePattern.matcher(fieldString);
+    StringBuffer result = new StringBuffer();
+
+    while (matcher.find()) {
+      String matched = matcher.group();
+      String fixed = matched.substring(0, matched.lastIndexOf('_')) + "_" + id;
+      matcher.appendReplacement(result, Matcher.quoteReplacement(fixed));
+    }
+
+    matcher.appendTail(result);
+
+    return result.toString();
   }
 
   /**
@@ -169,11 +248,12 @@ public class ConfiguratorCreatorImportServiceImpl implements ConfiguratorCreator
       String oldAttributeName,
       String newAttributeName) {
 
-    formulas
-        .stream()
-        .forEach(
-            configuratorFormula ->
-                configuratorFormula.setFormula(
-                    configuratorFormula.getFormula().replace(oldAttributeName, newAttributeName)));
+    formulas.forEach(
+        configuratorFormula -> {
+          if (!StringUtils.isEmpty(configuratorFormula.getFormula())) {
+            configuratorFormula.setFormula(
+                configuratorFormula.getFormula().replace(oldAttributeName, newAttributeName));
+          }
+        });
   }
 }

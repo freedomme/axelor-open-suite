@@ -72,30 +72,13 @@ if(width > 10){
                 <property name="category">Unformatted</property>
             </structure>
         </scalar-parameter>
-        <scalar-parameter name="Locale" id="3740">
-            <property name="hidden">true</property>
-            <property name="valueType">static</property>
-            <property name="isRequired">true</property>
-            <property name="dataType">string</property>
-            <property name="distinct">true</property>
-            <simple-property-list name="defaultValue">
-                <value type="constant">fr</value>
-            </simple-property-list>
-            <list-property name="selectionList"/>
-            <property name="paramType">simple</property>
-            <property name="concealValue">false</property>
-            <property name="controlType">text-box</property>
-            <structure name="format">
-                <property name="category">Unformatted</property>
-            </structure>
-        </scalar-parameter>
         <scalar-parameter name="DBName" id="3946">
             <property name="hidden">true</property>
             <property name="valueType">static</property>
             <property name="dataType">string</property>
             <property name="distinct">true</property>
             <simple-property-list name="defaultValue">
-                <value type="constant">jdbc:postgresql://localhost:5432/axelor-test</value>
+                <value type="constant">jdbc:postgresql://localhost:5432/</value>
             </simple-property-list>
             <list-property name="selectionList"/>
             <property name="paramType">simple</property>
@@ -764,8 +747,8 @@ return false;]]></method>
                                             <property name="content">
                                                 <data name="date" id="5628">
                                                     <structure name="dateTimeFormat">
-                                                        <property name="category">Custom</property>
-                                                        <property name="pattern">dd-MM-yyyy</property>
+                                                        <property name="category">Short Date</property>
+                                                        <property name="pattern">Short Date</property>
                                                     </structure>
                                                     <property name="textAlign">center</property>
                                                     <property name="resultSetColumn">date</property>

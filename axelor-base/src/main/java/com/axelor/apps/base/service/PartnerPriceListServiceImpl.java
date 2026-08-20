@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,27 +14,30 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.base.service;
 
+import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.db.Partner;
 import com.axelor.apps.base.db.PartnerPriceList;
 import com.axelor.apps.base.db.PriceList;
 import com.axelor.apps.base.db.repo.PartnerPriceListRepository;
 import com.axelor.apps.base.db.repo.PartnerRepository;
 import com.axelor.apps.base.db.repo.PriceListRepository;
-import com.axelor.apps.base.exceptions.IExceptionMessage;
+import com.axelor.apps.base.db.repo.TraceBackRepository;
+import com.axelor.apps.base.exceptions.BaseExceptionMessage;
 import com.axelor.apps.base.service.app.AppBaseService;
-import com.axelor.apps.tool.StringTool;
-import com.axelor.exception.AxelorException;
-import com.axelor.exception.db.repo.TraceBackRepository;
+import com.axelor.auth.AuthUtils;
+import com.axelor.auth.db.User;
 import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
-import com.google.inject.Inject;
+import com.axelor.utils.helpers.StringHelper;
+import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -54,8 +58,7 @@ public class PartnerPriceListServiceImpl implements PartnerPriceListService {
       return;
     }
     Set<PriceList> sortedPriceListSet =
-        priceListSet
-            .stream()
+        priceListSet.stream()
             .sorted(
                 Comparator.comparing(
                     priceList ->
@@ -75,7 +78,7 @@ public class PartnerPriceListServiceImpl implements PartnerPriceListService {
         throw new AxelorException(
             TraceBackRepository.CATEGORY_INCONSISTENCY,
             String.format(
-                I18n.get(IExceptionMessage.PARTNER_PRICE_LIST_DATE_INCONSISTENT),
+                I18n.get(BaseExceptionMessage.PARTNER_PRICE_LIST_DATE_INCONSISTENT),
                 previousTitle.replace("%", "%%"),
                 priceList.getTitle().replace("%", "%%")),
             partnerPriceList);
@@ -103,19 +106,27 @@ public class PartnerPriceListServiceImpl implements PartnerPriceListService {
       return null;
     }
     List<PriceList> priceLists =
-        priceListSet
-            .stream()
+        priceListSet.stream()
             .filter(
                 priceList ->
-                    (priceList.getApplicationBeginDate() == null
+                    priceList.getIsActive()
+                        && (priceList.getApplicationBeginDate() == null
                             || priceList
                                     .getApplicationBeginDate()
-                                    .compareTo(appBaseService.getTodayDate())
+                                    .compareTo(
+                                        appBaseService.getTodayDate(
+                                            Optional.ofNullable(AuthUtils.getUser())
+                                                .map(User::getActiveCompany)
+                                                .orElse(null)))
                                 <= 0)
                         && (priceList.getApplicationEndDate() == null
                             || priceList
                                     .getApplicationEndDate()
-                                    .compareTo(appBaseService.getTodayDate())
+                                    .compareTo(
+                                        appBaseService.getTodayDate(
+                                            Optional.ofNullable(AuthUtils.getUser())
+                                                .map(User::getActiveCompany)
+                                                .orElse(null)))
                                 >= 0))
             .collect(Collectors.toList());
     if (priceLists.size() == 1) {
@@ -145,8 +156,7 @@ public class PartnerPriceListServiceImpl implements PartnerPriceListService {
       return "self.id IN (0)";
     }
     List<PriceList> priceLists =
-        partnerPriceLists
-            .stream()
+        partnerPriceLists.stream()
             .flatMap(partnerPriceList1 -> partnerPriceList1.getPriceListSet().stream())
             .filter(
                 priceList ->
@@ -154,15 +164,23 @@ public class PartnerPriceListServiceImpl implements PartnerPriceListService {
                         && (priceList.getApplicationBeginDate() == null
                             || priceList
                                     .getApplicationBeginDate()
-                                    .compareTo(appBaseService.getTodayDate())
+                                    .compareTo(
+                                        appBaseService.getTodayDate(
+                                            Optional.ofNullable(AuthUtils.getUser())
+                                                .map(User::getActiveCompany)
+                                                .orElse(null)))
                                 <= 0)
                         && (priceList.getApplicationEndDate() == null
                             || priceList
                                     .getApplicationEndDate()
-                                    .compareTo(appBaseService.getTodayDate())
+                                    .compareTo(
+                                        appBaseService.getTodayDate(
+                                            Optional.ofNullable(AuthUtils.getUser())
+                                                .map(User::getActiveCompany)
+                                                .orElse(null)))
                                 >= 0))
             .collect(Collectors.toList());
-    return "self.id IN (" + StringTool.getIdListString(priceLists) + ")";
+    return "self.id IN (" + StringHelper.getIdListString(priceLists) + ")";
   }
 
   public PartnerPriceList getPartnerPriceList(Partner partner, int priceListTypeSelect) {

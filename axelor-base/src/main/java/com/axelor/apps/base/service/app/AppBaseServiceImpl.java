@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,56 +14,82 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.base.service.app;
 
 import com.axelor.app.AppSettings;
-import com.axelor.apps.base.db.AppBase;
+import com.axelor.apps.base.AxelorException;
+import com.axelor.apps.base.db.AddressTemplate;
+import com.axelor.apps.base.db.Company;
 import com.axelor.apps.base.db.CurrencyConversionLine;
-import com.axelor.apps.base.db.Language;
+import com.axelor.apps.base.db.Localization;
 import com.axelor.apps.base.db.Unit;
+import com.axelor.apps.base.db.repo.TraceBackRepository;
+import com.axelor.apps.base.exceptions.BaseExceptionMessage;
 import com.axelor.auth.AuthUtils;
 import com.axelor.auth.db.User;
+import com.axelor.common.StringUtils;
 import com.axelor.db.Query;
+import com.axelor.i18n.I18n;
+import com.axelor.meta.MetaFiles;
+import com.axelor.studio.app.service.AppService;
+import com.axelor.studio.app.service.ScriptAppServiceImpl;
+import com.axelor.studio.db.AppBase;
 import com.google.common.base.Strings;
 import com.google.inject.persist.Transactional;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import javax.inject.Singleton;
 
 @Singleton
-public class AppBaseServiceImpl extends AppServiceImpl implements AppBaseService {
+public class AppBaseServiceImpl extends ScriptAppServiceImpl implements AppBaseService {
 
-  protected static String DEFAULT_LOCALE = "en";
+  protected static String DEFAULT_LOCALE = "en_GB";
+
+  @Inject
+  public AppBaseServiceImpl(AppService appService) {
+    super(appService);
+  }
 
   @Override
   public AppBase getAppBase() {
-    return Query.of(AppBase.class).cacheable().fetchOne();
+    return Query.of(AppBase.class).cacheable().autoFlush(false).fetchOne();
   }
 
-  /**
-   * Get the today date time Get the value defined in User if not null, Else get the valued defined
-   * in Base app Else get the server current date time
-   */
   @Override
   public ZonedDateTime getTodayDateTime() {
+    return getTodayDateTime(null);
+  }
 
-    ZonedDateTime todayDateTime = ZonedDateTime.now();
+  public ZonedDateTime getTodayDateTime(Company company) {
+
+    ZoneId targetZone =
+        (company != null && StringUtils.notBlank(company.getTimezone()))
+            ? ZoneId.of(company.getTimezone())
+            : ZoneId.systemDefault();
+    ZonedDateTime todayDateTime = ZonedDateTime.now(targetZone);
 
     String applicationMode = AppSettings.get().get("application.mode", "prod");
 
     if ("dev".equals(applicationMode)) {
       User user = AuthUtils.getUser();
-      if (user != null && user.getToday() != null) {
-        todayDateTime = user.getToday();
+      if (user != null && user.getTodayDateT() != null) {
+        todayDateTime = user.getTodayDateT().withZoneSameInstant(targetZone);
       } else {
         AppBase appBase = getAppBase();
-        if (appBase != null && appBase.getToday() != null) {
-          return appBase.getToday();
+        if (appBase != null && appBase.getTodayDateT() != null) {
+          return appBase.getTodayDateT().withZoneSameInstant(targetZone);
         }
       }
     }
@@ -70,26 +97,10 @@ public class AppBaseServiceImpl extends AppServiceImpl implements AppBaseService
     return todayDateTime;
   }
 
-  /**
-   * Get the today date Get the value defined in User if not null, Else get the valued defined in
-   * Base app Else get the server current date
-   */
   @Override
-  public LocalDate getTodayDate() {
+  public LocalDate getTodayDate(Company company) {
 
-    return getTodayDateTime().toLocalDate();
-  }
-
-  @Override
-  public Unit getUnit() {
-
-    AppBase appBase = getAppBase();
-
-    if (appBase != null) {
-      return appBase.getDefaultProjectUnit();
-    }
-
-    return null;
+    return getTodayDateTime(company).toLocalDate();
   }
 
   @Override
@@ -105,17 +116,66 @@ public class AppBaseServiceImpl extends AppServiceImpl implements AppBaseService
   }
 
   @Override
-  public String getDefaultPartnerLanguageCode() {
+  public int getGlobalTrackingLogPersistence() {
+    AppBase appBase = getAppBase();
+    if (appBase != null) {
+      return appBase.getGlobalTrackingLogPersistence();
+    }
+    return DEFAULT_TRACKING_MONTHS_PERSISTENCE;
+  }
+
+  @Override
+  public int getNbDecimalDigitForQty() {
 
     AppBase appBase = getAppBase();
 
     if (appBase != null) {
-      Language language = appBase.getDefaultPartnerLanguage();
-      if (language != null && !Strings.isNullOrEmpty(language.getCode())) {
-        return language.getCode();
+      return appBase.getNbDecimalDigitForQty();
+    }
+
+    return DEFAULT_NB_DECIMAL_DIGITS;
+  }
+
+  @Override
+  public int getNbDecimalDigitForTaxRate() {
+
+    AppBase appBase = getAppBase();
+
+    if (appBase != null) {
+      return appBase.getNbDecimalDigitForTaxRate();
+    }
+
+    return DEFAULT_NB_DECIMAL_DIGITS;
+  }
+
+  @Override
+  public String getDefaultPartnerLocale() {
+
+    AppBase appBase = getAppBase();
+
+    if (appBase != null) {
+      Localization localization = appBase.getDefaultPartnerLocalization();
+      if (localization != null && !Strings.isNullOrEmpty(localization.getCode())) {
+        return localization.getCode();
       }
     }
     return DEFAULT_LOCALE;
+  }
+
+  @Override
+  public AddressTemplate getDefaultAddressTemplate() throws AxelorException {
+    AppBase appBase = getAppBase();
+
+    if (appBase != null) {
+      AddressTemplate addressTemplate = appBase.getDefaultAddressTemplate();
+      if (addressTemplate != null) {
+        return addressTemplate;
+      }
+    }
+    throw new AxelorException(
+        appBase,
+        TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
+        I18n.get(BaseExceptionMessage.NO_DEFAULT_ADDRESS_TEMPLATE));
   }
 
   // Conversion de devise
@@ -150,7 +210,7 @@ public class AppBaseServiceImpl extends AppServiceImpl implements AppBaseService
       if (timePref.equals("days")) {
         duration = duration.multiply(appBase.getDailyWorkHours());
       } else if (timePref.equals("minutes")) {
-        duration = duration.divide(new BigDecimal(60), 2, RoundingMode.HALF_EVEN);
+        duration = duration.divide(new BigDecimal(60), 2, RoundingMode.HALF_UP);
       }
     }
 
@@ -174,7 +234,7 @@ public class AppBaseServiceImpl extends AppServiceImpl implements AppBaseService
       if (timePref.equals("days")
           && dailyWorkHrs != null
           && dailyWorkHrs.compareTo(BigDecimal.ZERO) != 0) {
-        duration = duration.divide(dailyWorkHrs, 2, RoundingMode.HALF_EVEN);
+        duration = duration.divide(dailyWorkHrs, 2, RoundingMode.HALF_UP);
       } else if (timePref.equals("minutes")) {
         duration = duration.multiply(new BigDecimal(60));
       }
@@ -183,10 +243,103 @@ public class AppBaseServiceImpl extends AppServiceImpl implements AppBaseService
     return duration;
   }
 
+  @Override
+  public Unit getUnitDays() throws AxelorException {
+    AppBase appBase = getAppBase();
+    Unit daysUnit = appBase.getUnitDays();
+    if (daysUnit == null) {
+      throw new AxelorException(
+          appBase,
+          TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
+          I18n.get(BaseExceptionMessage.APP_BASE_NO_UNIT_DAYS));
+    }
+    return daysUnit;
+  }
+
+  @Override
+  public Unit getUnitHours() throws AxelorException {
+    AppBase appBase = getAppBase();
+    Unit hoursUnit = appBase.getUnitHours();
+    if (hoursUnit == null) {
+      throw new AxelorException(
+          appBase,
+          TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
+          I18n.get(BaseExceptionMessage.APP_BASE_NO_UNIT_HOURS));
+    }
+    return hoursUnit;
+  }
+
+  @Override
+  public Unit getUnitMinutes() throws AxelorException {
+    AppBase appBase = getAppBase();
+    Unit minuteUnit = appBase.getUnitMinutes();
+    if (minuteUnit == null) {
+      throw new AxelorException(
+          appBase,
+          TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
+          I18n.get(BaseExceptionMessage.APP_BASE_NO_UNIT_MINUTES));
+    }
+    return minuteUnit;
+  }
+
+  @Override
+  public BigDecimal getDailyWorkHours() throws AxelorException {
+    AppBase appBase = getAppBase();
+    BigDecimal dailyWorkHours = appBase.getDailyWorkHours();
+    if (dailyWorkHours == null || dailyWorkHours.signum() <= 0) {
+      throw new AxelorException(
+          appBase,
+          TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
+          I18n.get(BaseExceptionMessage.APP_BASE_NO_UNIT_DAILY_WORK_HOURS));
+    }
+    return dailyWorkHours;
+  }
+
   /** {@inheritDoc} */
   @Override
   @Transactional
   public void setManageMultiBanks(boolean manageMultiBanks) {
     getAppBase().setManageMultiBanks(manageMultiBanks);
+  }
+
+  @Override
+  public int getProcessTimeout() {
+    int processTimeout = getAppBase().getProcessTimeout();
+    if (processTimeout < 1) {
+      return 10;
+    } else {
+      return processTimeout;
+    }
+  }
+
+  @Override
+  public String getSireneUrl() throws AxelorException {
+    AppBase appBase = getAppBase();
+    String sireneUrl = appBase.getSireneUrl();
+    if (sireneUrl != null) {
+      return sireneUrl;
+    } else {
+      throw new AxelorException(
+          appBase,
+          TraceBackRepository.CATEGORY_CONFIGURATION_ERROR,
+          I18n.get(BaseExceptionMessage.APP_BASE_SIRENE_API_URL_MISSING));
+    }
+  }
+
+  @Override
+  public String getImportErrorPath() throws IOException {
+    AppBase appBase = getAppBase();
+    String dir =
+        String.format(
+            "import_error_%s", getTodayDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+    if (appBase != null && StringUtils.notEmpty(appBase.getImportErrorPath())) {
+      return appBase.getImportErrorPath() + File.separator + dir;
+    }
+    return createTempDir(dir).toFile().getPath();
+  }
+
+  protected Path createTempDir(String dir) throws IOException {
+    Path tmp = MetaFiles.getPath("tmp");
+    return Files.createDirectories(tmp.resolve(dir));
   }
 }

@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,7 +14,7 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.production.report;
 
@@ -105,6 +106,8 @@ public interface ITranslation {
   public static final String MANUF_ORDER_IN_PROGRESS = /*$$(*/ "ManufOrder.inProgress"; /*)*/
   public static final String MANUF_ORDER_STANDBY = /*$$(*/ "ManufOrder.standBy"; /*)*/
   public static final String MANUF_ORDER_COMPANY_TOTAL = /*$$(*/ "ManufOrder.total"; /*)*/
+  public static final String MANUF_ORDER_MO_COMMENT_FROM_SALE_ORDER = /*$$(*/
+      "ManufOrder.moCommentFromSaleOrder"; /*)*/
 
   public static final String PRODUCTION_PROCESS_LABEL = /*$$(*/ "ProdProcess.label"; /*)*/
   public static final String PRODUCTION_PROCESS_NAME = /*$$(*/ "ProdProcess.name"; /*)*/
@@ -143,6 +146,8 @@ public interface ITranslation {
       "BOM.defineSubBillOfMaterial"; /*)*/
   public static final String BILL_OF_MATERIAL_HAS_NO_MANAGE_STOCK = /*$$(*/
       "BOM.hasNoManageStock"; /*)*/
+  public static final String BILL_OF_MATERIAL_RESIDUAL_PRODUCTS = /*$$(*/
+      "BOM.residualProducts"; /*)*/
 
   String RAW_MATERIAL_REQUIREMENT_TITLE = /*$$(*/ "RawMaterialRequirement.title"; /*)*/
   String RAW_MATERIAL_REQUIREMENT_COMPANY = /*$$(*/ "RawMaterialRequirement.company"; /*)*/
@@ -209,4 +214,9 @@ public interface ITranslation {
       "CostSheet.calculationTypeBillOfMaterial"; /*)*/
   public static final String COST_SHEET_CALCULATION_DATE = /*$$(*/
       "CostSheet.calculationDate"; /*)*/
+
+  public static final String MPS_CHARGE_TITLE = /*$$(*/ "MpsCharge.title"; /*)*/
+  public static final String MPS_CHARGE_CODE = /*$$(*/ "MpsCharge.code"; /*)*/
+  public static final String MPS_CHARGE_START_MONTH = /*$$(*/ "MpsCharge.startMonth"; /*)*/
+  public static final String MPS_CHARGE_END_MONTH = /*$$(*/ "MpsCharge.endMonth"; /*)*/
 }

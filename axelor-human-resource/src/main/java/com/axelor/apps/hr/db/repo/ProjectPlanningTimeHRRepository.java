@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,18 +14,21 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.hr.db.repo;
 
+import com.axelor.apps.base.db.ICalendarEvent;
+import com.axelor.apps.base.db.repo.ICalendarEventRepository;
 import com.axelor.apps.hr.service.project.ProjectPlanningTimeService;
 import com.axelor.apps.project.db.Project;
 import com.axelor.apps.project.db.ProjectPlanningTime;
+import com.axelor.apps.project.db.ProjectTask;
 import com.axelor.apps.project.db.repo.ProjectPlanningTimeRepository;
 import com.axelor.apps.project.db.repo.ProjectRepository;
-import com.axelor.team.db.TeamTask;
-import com.axelor.team.db.repo.TeamTaskRepository;
-import com.google.inject.Inject;
+import com.axelor.apps.project.db.repo.ProjectTaskRepository;
+import com.axelor.inject.Beans;
+import jakarta.inject.Inject;
 
 public class ProjectPlanningTimeHRRepository extends ProjectPlanningTimeRepository {
 
@@ -32,22 +36,14 @@ public class ProjectPlanningTimeHRRepository extends ProjectPlanningTimeReposito
 
   @Inject private ProjectRepository projectRepo;
 
-  @Inject private TeamTaskRepository taskRepo;
+  @Inject private ICalendarEventRepository iCalendarEventRepository;
 
   @Override
   public ProjectPlanningTime save(ProjectPlanningTime projectPlanningTime) {
 
     super.save(projectPlanningTime);
 
-    Project project = projectPlanningTime.getProject();
-    project.setTotalPlannedHrs(planningTimeService.getProjectPlannedHrs(project));
-
-    Project parentProject = project.getParentProject();
-    if (parentProject != null) {
-      parentProject.setTotalPlannedHrs(planningTimeService.getProjectPlannedHrs(parentProject));
-    }
-
-    TeamTask task = projectPlanningTime.getTask();
+    ProjectTask task = projectPlanningTime.getProjectTask();
     if (task != null) {
       task.setTotalPlannedHrs(planningTimeService.getTaskPlannedHrs(task));
     }
@@ -59,12 +55,18 @@ public class ProjectPlanningTimeHRRepository extends ProjectPlanningTimeReposito
   public void remove(ProjectPlanningTime projectPlanningTime) {
 
     Project project = projectPlanningTime.getProject();
-    TeamTask task = projectPlanningTime.getTask();
+    ProjectTask task = projectPlanningTime.getProjectTask();
+
+    if (projectPlanningTime.getIcalendarEvent() != null) {
+      ICalendarEvent event = projectPlanningTime.getIcalendarEvent();
+      projectPlanningTime.setIcalendarEvent(null);
+      iCalendarEventRepository.remove(iCalendarEventRepository.find(event.getId()));
+    }
 
     super.remove(projectPlanningTime);
 
     if (task != null) {
-      taskRepo.save(task);
+      Beans.get(ProjectTaskRepository.class).save(task);
     } else {
       projectRepo.save(project);
     }

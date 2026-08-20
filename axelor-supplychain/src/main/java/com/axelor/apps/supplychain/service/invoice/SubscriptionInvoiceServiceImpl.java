@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,25 +14,28 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.supplychain.service.invoice;
 
 import com.axelor.apps.account.db.Invoice;
 import com.axelor.apps.account.db.repo.InvoiceRepository;
+import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.service.app.AppBaseService;
 import com.axelor.apps.sale.db.SaleOrder;
 import com.axelor.apps.sale.db.repo.SaleOrderRepository;
-import com.axelor.apps.supplychain.service.SaleOrderInvoiceService;
+import com.axelor.apps.supplychain.service.saleorder.SaleOrderInvoiceService;
+import com.axelor.auth.AuthUtils;
+import com.axelor.auth.db.User;
 import com.axelor.db.Query;
-import com.axelor.exception.AxelorException;
-import com.google.inject.Inject;
 import com.google.inject.persist.Transactional;
+import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class SubscriptionInvoiceServiceImpl implements SubscriptionInvoiceService {
 
@@ -44,7 +48,7 @@ public class SubscriptionInvoiceServiceImpl implements SubscriptionInvoiceServic
   @Override
   public List<Invoice> generateSubscriptionInvoices() throws AxelorException {
 
-    List<Invoice> invoices = new ArrayList<Invoice>();
+    List<Invoice> invoices = new ArrayList<>();
 
     for (SaleOrder saleOrder : getSubscriptionOrders(null)) {
       Invoice invoice = generateSubscriptionInvoice(saleOrder);
@@ -67,7 +71,12 @@ public class SubscriptionInvoiceServiceImpl implements SubscriptionInvoiceServic
                     + "AND (self.contractEndDate IS NULL OR self.contractEndDate >= :subScriptionDate)")
             .bind("saleOrderType", SaleOrderRepository.SALE_ORDER_TYPE_SUBSCRIPTION)
             .bind("saleOrderStatus", SaleOrderRepository.STATUS_ORDER_CONFIRMED)
-            .bind("subScriptionDate", appBaseService.getTodayDate());
+            .bind(
+                "subScriptionDate",
+                appBaseService.getTodayDate(
+                    Optional.ofNullable(AuthUtils.getUser())
+                        .map(User::getActiveCompany)
+                        .orElse(null)));
 
     if (limit != null) {
       return query.fetch(limit);
@@ -86,12 +95,10 @@ public class SubscriptionInvoiceServiceImpl implements SubscriptionInvoiceServic
         saleOrderInvoiceService.generateInvoice(saleOrderRepo.find(saleOrder.getId()));
 
     if (invoice != null) {
-
-      invoice = saleOrderInvoiceService.generateInvoice(saleOrder);
       if (saleOrder.getPeriodicityTypeSelect() == 1) {
         temporalUnit = ChronoUnit.DAYS;
       }
-      invoice.setInvoiceDate(appBaseService.getTodayDate());
+      invoice.setInvoiceDate(appBaseService.getTodayDate(saleOrder.getCompany()));
       invoice.setOperationSubTypeSelect(InvoiceRepository.OPERATION_SUB_TYPE_SUBSCRIPTION);
 
       LocalDate invoicingPeriodStartDate = saleOrder.getNextInvoicingStartPeriodDate();

@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,60 +14,94 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.account.service;
 
 import com.axelor.apps.account.db.Journal;
+import com.axelor.apps.account.db.repo.JournalRepository;
+import com.axelor.apps.account.db.repo.JournalTypeRepository;
+import com.axelor.apps.account.db.repo.MoveRepository;
 import com.axelor.db.JPA;
-import java.lang.invoke.MethodHandles;
+import com.google.inject.persist.Transactional;
+import jakarta.inject.Inject;
+import jakarta.persistence.Query;
 import java.math.BigDecimal;
-import javax.persistence.Query;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class JournalService {
+  protected JournalRepository journalRepository;
 
-  private final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-  /** Debit balance = debit - credit */
-  public static final Integer BALANCE_TYPE_DEBIT_BALANCE = 1;
-
-  /** Credit balance = credit - debit */
-  public static final Integer BALANCE_TYPE_CREDIT_BALANCE = 1;
+  @Inject
+  public JournalService(JournalRepository journalRepository) {
+    this.journalRepository = journalRepository;
+  }
 
   /**
    * Compute the balance of the journal, depending of the account type and balance type
    *
    * @param journal Journal
-   * @param accountType Technical type select of AccountType
-   * @param balanceType
-   *     <p>1 : debit balance = debit - credit
-   *     <p>2 : credit balance = credit - debit
    * @return The balance (debit balance or credit balance)
    */
-  public BigDecimal computeBalance(Journal journal, int accountType, int balanceType) {
+  public Map<String, BigDecimal> computeBalance(Journal journal) {
 
-    Query balanceQuery =
-        JPA.em()
-            .createQuery(
-                "select sum(self.debit - self.credit) from MoveLine self where self.move.journal = :journal "
-                    + "and self.move.ignoreInAccountingOk IN ('false', null) and self.move.statusSelect IN (2, 3) and self.account.accountType.technicalTypeSelect = :accountType");
+    Map<String, BigDecimal> resultMap = new HashMap<>();
 
-    balanceQuery.setParameter("journal", journal);
-    balanceQuery.setParameter("accountType", accountType);
+    String query =
+        "select sum(self.debit),sum(self.credit)"
+            + " from MoveLine self where self.move.journal.id = :journal "
+            + "and self.move.ignoreInAccountingOk IN (false, null) and self.move.statusSelect IN (:statusDaybook, :statusValidated) and self.account.accountType MEMBER OF self.move.journal.journalType.accountTypeSet";
 
-    BigDecimal balance = (BigDecimal) balanceQuery.getSingleResult();
+    Query resultQuery = JPA.em().createQuery(query);
 
-    if (balance != null) {
-      if (balanceType == BALANCE_TYPE_CREDIT_BALANCE) {
-        balance = balance.negate();
+    resultQuery.setParameter("journal", journal.getId());
+    resultQuery.setParameter("statusDaybook", MoveRepository.STATUS_DAYBOOK);
+    resultQuery.setParameter("statusValidated", MoveRepository.STATUS_ACCOUNTED);
+
+    Object[] resultArr = (Object[]) resultQuery.getResultList().get(0);
+
+    resultMap.put(
+        "debit", resultArr[0] != null ? new BigDecimal(resultArr[0].toString()) : BigDecimal.ZERO);
+    resultMap.put(
+        "credit", resultArr[1] != null ? new BigDecimal(resultArr[1].toString()) : BigDecimal.ZERO);
+    resultMap.put("balance", resultMap.get("debit").subtract(resultMap.get("credit")).abs());
+
+    return resultMap;
+  }
+
+  @Transactional
+  public void toggleStatusSelect(Journal journal) {
+    if (journal != null) {
+      if (journal.getStatusSelect() == JournalRepository.STATUS_INACTIVE) {
+        journal = activate(journal);
+      } else {
+        journal = desactivate(journal);
       }
-      log.debug("Account balance : {}", balance);
-
-      return balance;
-    } else {
-      return BigDecimal.ZERO;
+      journalRepository.save(journal);
     }
+  }
+
+  protected Journal activate(Journal journal) {
+    journal.setStatusSelect(JournalRepository.STATUS_ACTIVE);
+    return journal;
+  }
+
+  protected Journal desactivate(Journal journal) {
+    journal.setStatusSelect(JournalRepository.STATUS_INACTIVE);
+    return journal;
+  }
+
+  public boolean isThirdPartyPayerOk(Journal journal) {
+    List<Integer> journalTypeList =
+        Arrays.asList(
+            JournalTypeRepository.TECHNICAL_TYPE_SELECT_EXPENSE,
+            JournalTypeRepository.TECHNICAL_TYPE_SELECT_SALE,
+            JournalTypeRepository.TECHNICAL_TYPE_SELECT_OTHER);
+
+    return journal != null
+        && journalTypeList.contains(journal.getJournalType().getTechnicalTypeSelect());
   }
 }

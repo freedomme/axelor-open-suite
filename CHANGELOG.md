@@ -1,425 +1,754 @@
-# Changelog
-## [5.2.4] - 2020-02-05
-## Improvements
-- BankOrder: Display of Signatory ebics user and Sending date time in report.
-- ACCOUNTING REPORT: new filter for analytic distribution.
-- Timesheet: alert to check manufOrder is finished or not on timesheetLine.
-- PaymentMode: Add sequence field on account settings grid view.
-- Stock Move Line: store purchase price in stock move line to use this information in the declaration of exchanges.
-- INVOICE: add specific note of company bank details on invoice report.
-- Message: Improved performance when generating mail messages from templates.
-- ACCOUNTING CUT OFF: display warning message when batch has been already launched with the same move date.
-- BANKPAYMENT: Update condition to display field ics number.
-- PURCHASE REQUEST: add new tab to see related purchase orders.
-- ANALYTIC MOVE LINE: add id and move line to analytic move line grid.
-- Subrogation release: improved visibility of unpaid invoices.
-- INVOICE: Filling number of copies for invoice printing is now required.
-- Stock Move: stock reservation management without sale order.
-- Manuf Order: manage stock reservation from stock move.
-- Invoice: Add control to avoid cancelation of ventilated invoice.
-- BALANCE TRANSLATION: Translate "Balance" in french by "Solde".
-- EXPENSE: add new printing design.
-- Invoice printing: remove space between invoice lines without description.
-- INVOICE: Add translation for "Canceled payment on" and "Pending payment" and update list of payment viewer in invoice form.
-- Configurator: generate bill of material when creating a sale order line from a configurator.
+## [9.1.6] (2026-08-20)
 
-## Bug Fixes
-- INVOICE: Fixed payment mode on mass invoicing refund.
-- MESSAGE: correction of sending a message and correctly update status of message.
-- BankOrder: change translation of partnerTypeSelect field.
-- Account: Add missing translations.
-- BankOrder: Fix domain issue of signatoryEbicsUser field.
-- INVENTORY: Fix issue of realQty when copying inventory.
-- TIMESHEET: Remove leave days and holidays when changing end date.
-- CAMPAIGN: Fix filter value each time changes while Generating targets from TargetList.
-- Configurator: Fix sale order line not being created from a configurator.
-- Configurator: Generate bill of material on generating a sale order line from a configurator.
-- SaleOrderLine: Hide qty cell in SaleOrder report when the sale order line is a title line.
-- INVOICE: now the date verification of the ventilation process depends of invoices of the same company.
-- MOVE: corrected sequence generation, now use correctly the date of the move and not the date of validation.
-- Stock Move partial invoicing: manage correctly the invoicing status when we refund the invoice.
-- ANALYTIC REPORT: fix issue where wrong reports were printed.
-- ACCOUNTING REPORT: improved analytic general ledger.
-- Subrogative release: corrected the possibility to create two subrogation transmitted or accounted with the same invoices.
-- Configurators: fix issue in configurator menu with latest AOP version.
-- Stock Move: Do not modify wap when generating customer return.
-- ADDRESS: Fix error message when clicking on ViewMap Btn of a new address.
-- Configurator BOM: Correctly make the difference between components and sub bill of material.
+### Fixes
+#### Base
 
-## [5.2.3] - 2020-01-23
-## Features
-- INVOICING PROJECT: consolidation of invoicing project.
-- INVOICING BATCH: consolidation of phases.
+* Product: fixed product demo data issue which was showing company specific details after saving it.
 
-## Improvements
-- Invoice: Removal of companyBankDetails comment in invoice form.
-- BANKSTATEMENT: import multiple records in a single line.
-- Opportunity: set sale order defaults on new.
-- Typos in PurchaseRequestLine domain file.
-- PurchaseRequestLine: cacheable removed for this entity.
-- BANKSTATEMENT: on copy reset statusSelect.
-- STOCK: fromAddress in stock-move supplier arrival is now required.
-- CARD VIEWS: Display non square images with the right proportions.
-- InvoiceLine: filter on taxLine.
-- EBICS : Support of ARKEA bank:
-Defined the KeyUsage attribute as critical on self-signed certificate.
-Defined the KeyUsage attribute with KeyEncipherment on Encryption certificate.
-- EBICS : Support bank statements of LA BANQUE POSTALE bank:
-This bank return the code `EBICS_OK` instead of the correct code `EBICS_DOWNLOAD_POSTPROCESS_DONE` when we fetch a file (HPD, FDL...)
-In this case, the file is correctly retrieved from the bank server, but not saved in database. Now we don't throw an exception when the return code is `EBICS_OK`.
-- Add checks in services on app configuration, now more services are only called if the corresponding app is enabled.
+#### Account
 
-## Bug Fixes
-- Sale Order Invoicing: take in consideration refund invoice when checking the invoiced amount.
-- LEAVE REQUEST: Updated calendar filter.
-- Forecast recap: Displaying selected value's title instead of value on error message.
-- MOVE REMOVE SERVICE: corrected error that occurred when several lines were found.
-- BANK ORDER: the date field is now again read-only on bank order generated automatically.
-- Advanced Import: Fix config line import.
-- MOVE LINE: removed the possibility to delete a move line in a move when the move line is reconciled.
-- SUBROGATION RELEASE / INVOICE: corrected npe apearring in log when opening a new subrogation release.
-- FIXED ASSET: set Deprecation Date in Move generated from FixedAsset and fix last Day Of Month FixedAsset.
-- Invoice: Fix wrong attribute name used in grid views.
-- Ebics Partner: set editable for bank order services list.
-- INVOICE: Fixed invoice refund ventilation issue.
-- EBICS BANK: Fixed typo issue on form view on the X509 fields.
-- DataBackup: DataBackup non-persistable class issue Fix.
-- FIXED ASSET: correction of prorata temporis.
-- MULTI INVOICING: add control on generateMultiInvoiceBtn when invoice has already been created.
-- INVOICE PAYMENT: fix an issue where an invoice payment is taken into account twice.
-- GEONAME: fix city import.
+* Invoice: fixed tax discrepancy error during invoice ventilation caused by inconsistent rounding between the per-line and aggregate tax calculations used in the move's tax consistency check.
 
-## [5.2.2] - 2020-01-09
-## Features
-- TOOLS: added utility class for interacting with SFTP.
-- PAYROLL PREPARATION: add new Payroll Preparation Export type "SILAE".
-- Advance data import: Add action apply support.
+#### Production
 
-## Improvements
-- COMPANY: mass update enabled for some fields.
-- BANKDETAILS: mass update enabled for currency and active field.
-- PRODUCT: added tracking on code and name fields.
-- EBICS USER : Group and sort by bank and partner in grid view.
-- INVOICE: Display PFP validator and status in invoice supplier refund grid.
-- EBICSBANK: Set tracking for all fields on update.
-- METASCHEDULE : added batchServiceSelect option for Contract Batch.
-- INVOICING PROJECT: provide menu for invoicing project grid for mass invoicing.
-- EBICS USER: Add field serial number (CORP).
-- EmployeeFile: Add new date field to store the date of latest upload.
-- SALE ORDER/PURCHASE ORDER: add button "Back to confirmed order" and "Back to validated order" respectively.
-- Budget: Addition of new value for periodDurationSelect.
-- Stock move invoicing: when generating an invoice, the user can now only select quantity not present in generated invoices.
-- SALE ORDER: change title "Description to display" of field 'description'.
-- ACCOUNTING REPORT: display popup message on click of 'exportBtn'.
-- INVOICING PROJECT: added field "teamTask" in timesheet line form related to project.
-- FIXES ASSET: add analytic distribution template.
-- FIXES ASSET CATEGORY: add analytic distribution template.
-- STOCK CORRECTION: Change status to draft on copy.
-- EBICS BANK: now X509 Extensions for auto signed certification are managed independently.
-- STOCK CORRECTION: change error message on validate.
-- EBICS USER: replacing Listener object with ImporterListener for EbicsUser Import.
-- STOCK MOVE: Add default supplier partner in mrp line grid.
-- STOCK MOVE: Maximized pop up of projected stock and counter.
-- STOCK MOVE: store invoicing status in database.
+* Production: fixed incorrect component requirements in MRP calculations for bills of materials producing multiple units.
+* Production: fixed a manufacturing order generating new tracking numbers instead of reusing the original ones after a produced stock move line was manually deleted.
 
-## Bug Fixes
-- Ebics User: resolve error getting on export and modify import config and export template to include BankOrderList and BankStatementList of EbicsPartner.
-- BankOrder: Fix NPE on click of confirm for International transfer.
-- BATCH: empty link to batch on copy for BankPaymentBatch and ContractBatch.
-- Invoice Payment: resolve invoice amount due update when the generate accounting move option is not active.
-- BANK ORDER: corrected the possibility to generate the same move twice.
-- BANK ORDER: corrected the behavior of bank order, now bank order moves can be generated on validation or realization.
-- BUSINESS PROJECT: fix negative refund in financial report.
-- INVOICE: now comment on invoices is made from the concatenation of comment from partner and comment from company bank details.
-- SALE ORDER: now on invoice generation from sale order action the generated invoices have their comment made from the concatenation of comment from partner and comment from company bank details.
-- Mass invoicing stock move: fix generate one invoice from multiple stock moves.
-- SALE ORDER: Fixed accounting situation not being set from the partner when generating the order from a partner form.
-- USER: fix NPE on user creation when active team is null.
-- Purchase Order: Fix NPE on copy of purchaseOrder when it has an empty purchaseOrderLineList.
-- Contract: correct the translation of 'Fiscal position'.
-- MRP: Do not show mrp lines from other MRPs when not displaying products without proposals.
-- LEAVE REQUEST: No longer displays an error message when saving a leave request.
-- EBICSUSER EXPORT: Fix for "Cannot get property 'code' on null object" error.
-- Bank Payment: fix translation.
-- OPPORTUNITY: On copy, clear sale order list.
-- Fixed Asset: Fix issue of infinite value of depreciation rate.
-- Campaign: Fix campaign form view.
-- Purchase order: remove M2O invoice field.
-- STOCKMOVE: display qty per tracking number and not total available qty for tracking number.
-- HR: Fix typo.
-- INVOICING PROJECT: Filter the records including deadlineDate.
-- MRP calculation: fix NPE on calculation.
-- MOVE LINE: Bank reconciliation amount is now read-only.
-- MRP forecast: Reset status on copy.
-- INVOICE: corrected the generation of comment with null display.
-- Purchase Order: Fix NPE when company is null.
-- SALE ORDER LINE: Rename "sale.order.line.type.select" selection to "line.type.select" and move it to base module.
-- Stock Move mass invoicing: improve performance when selecting stock moves in wizard.
-- Cut-off batch: filter already invoiced stock move to improve batch performance.
+#### Purchase
 
-## [5.2.1] - 2019-12-16
-## Features
-- ACCOUNTING REPORT: add new report, bank reconciliation statement.
+* Purchase order: fixed unit price not reset to the product default purchase price when the ordered quantity is outside the supplier catalog quantity range.
 
-## Improvements
-- INVOICE: new mandatory labeling: Head office address.
-- Company: Add tree view for companies.
-- AdvancedExportLine: Add translation for field orderByType.
-- PURCHASE REQUEST: add new columns in purchase request grid view.
-- MOVE: changed position of reconciliation tag in move form.
-- BANK STATEMENT: add caption under bank statement line grid in bank statement form in order to explain the colors are used in bank statement line grid.
-- PRODUCT: update translation for "Service" and "Product".
-- STOCK MOVE: empty reservation date time on duplicate stock move.
-- STOCK MOVE: Update stock move's form view.
-- SALE ORDER PRINTING: rename title "Sale order" to "Order Acknowledgement" of report on condition.
-- MOVE: Improved messages when there is an exception on trying to remove an accounting move.
-- Partner Form: change the french translation of "Create sale quotation".
-- STOCK MOVE: empty to and from stock location set on company change.
-- STOCK MOVE: hide reserved qty when it is a supplier arrival or a customer return.
-- STOCK MOVE: rename title of stock-move-form buttons related to PFP.
-- STOCK MOVE: update pfp tags on stock move form.
-- Invoicing project: unit conversion for "Duration adjust for customer".
-- ACCOUNTING REPORT: change the title of "General ledger 2" from the selection.
-- TAX: Show type select in grid view.
-- Sale order/quotation: fix tab title when generating a quotation from an opportunity.
+#### Sale
 
-## Bug Fixes
-- ANALYTIC: analytic journal in analytic line is now required.
-- REFUND: avoid blocking message when ventilating the invoice.
-- MOVE: fix display of status tag in move form.
-- Manuf Order: fix real quantity not updating when a new line in consumed products is created.
-- INVOICE PAYMENT CANCELLATION: corrected error when boolean allow removal validate move in account configuration is true.
-- INVOICE: stopped the creation of invoice payment when a reconciliation is made with accounts not used in partner balance.
-- User: find user by email using partner email address.
-- Invoice: fix exception during passed for payment validation.
-- Resolve NPE on stockMoveLines while displaying archived records.
-- StockMove: set readonly to/fromStockLocation if status != Draft.
-- INVOICE: remove the possibility for the user to manually link a stockMove to an invoice.
-- PURCHASE ORDER LINE: isFilterOnSupplier is always true by default and can be set to false manually.
-- INVOICE: Fix error on merging two invoices.
-- Invoice: fix payment button visibility issue.
-- HR: update insert leave method for mobile app.
-- INVOICE: Fix printing of unit price when invoiceLine type is title.
-- MOVE LINE: fix amount paid display in move line form.
-- STOCK: ProductWorth computation fixed in ABCAnalysis.
-- BASE: ABC Analysis Line with qty and worth equal to 0 are now removed.
-- Fix Issues on EBICS user and partner form.
-- Purchase Order: fix view budgetDistributionListPanel of purchaseOrderLine.
-- Weighted Average Price: Fix computation issue causing an error in wap price.
-- STOCK MOVE: fix the problem of partially invoiced qty in invoicing wizard form.
-- STOCK CORRECTION: fixed error when qty is negative by reversing toStockLocation and fromStockLocation of created stock move.
-- MASS INVOICING STOCK MOVE: fix error when selecting stock move to invoice.
+* Sale order: fixed sale order blocking control is not being checked on order confirmation.
 
-## [5.2.0] - 2019-11-29
-## Features
-- Migration to Axelor Open Platform 5.2.
-- Axelor-Business-Support: Addition of new module and app 'axelor-business-support'.
-- Employee: added DPAE.
-- TeamTask: added Frequency to be able to repeat tasks on given points in time.
-- Employee: added wizard to create a new employee.
-- SaleOrder: added possibility to invoice via generated task.
-- Project: add support for project version.
-- Project: add new form to create announcement for a given project.
-- New menu and form stock correction allowing to fix a quantity in stock.
-- User Form: Provide step wise view to create a user.
-- TeamTask: Complete rework of team task model and views.
-- Project: Complete rework of project model and views.
-- Base: Addition of new object 'MailingListMessage' along with views, parent menu and sub-menus.
-- InvoicingProject: Added new report 'InvoicingProjectAnnex.rptdesign' and attach to object on generating invoice.
-- HR: Add CSV export support for Employment Contracts from its view and HR batch.
-- Quality: Major improvements in axelor-quality module.
-- QUALITY CONTROL: New report to print.
-- AppBase: Add new configuration allowing to disable multi company support.
-- OPPORTUNITY: Create event from opportunity.
-- PROJECT: Add new feature allowing to create a template for a project.
-- Invoice & PurchaseOrder: Added a budget overview.
-- Advanced Import: Add feature to import data with advanced configurations.
-- BPM: More than one workflow support for a same object.
-- Sale Order/Sale Invoice: allow to change customer in existing invoice or order.
-- MESSAGE TEMPLATE: added the management of additional contexts (groovy evaluation) in order to allow the use of Json fields.
-- FORECAST RECAP: Add support of printing report in 'xls' and 'ods' format.
-- PERIOD: Add a new popup when closing period to allow user to check and validate move lines.
-- Stock Move: Add support for partial invoicing.
-- ABC ANALYSIS: Add support for printing report in 'xls' type.
-- Business Project: Add 'Project invoicing assistant' batch to update tasks and generate invoicing projects.
-- Project Folder: Add two printings to display all project elements linked to the folder.
-- Distance travelled calculation of kilometric expense line with Open street map.
-- Timesheet: add timesheet reporting.
-- Stock: Add stock history view for a given product, company and stock location.
-- Production: Provide menu for Machine Planning.
-- Company: Add employee Phonebook.
-- Base: Addition of fields 'height' and 'width' in Company to change logo's dimension in Reports.
-- Add a payment validator in supplier invoices.
+#### Supply Chain
 
-## Improvements
-- SaleOrder/Partner: adding new fields for comments on invoices, sale orders, purchase orders and deliveries.
-- Timesheet: assign Task to lines when generating from Realise Planning.
-- Timesheet: mark timesheet line as to be invoiced while generating it from Realise Planning.
-- TeamTask: Add button to enter spent time.
-- LogisticalForm: if config enabled, send an email on first save.
-- MANUF. APP: new config to hide cost sheet group.
-- Purchase Request: Add the possibility to select purchase orders.
-- Production: Addition of two dummy fields to calculate sum of planned and real duration of operation orders.
-- MOVE: improve reversion process.
-- SaleOrder: task by product and task by line invoicing.
-- SALE ORDER: Update in 'Quotations template' working process and view.
-- DataBackup: Add possibility to restore date fields from a given relative date.
-- PURCHASE ORDER LINES/INVOICE LINES: New fields related to budget.
-- WEEKLY PLANNING: Add a type and minor changes.
-- BULK UNIT COST CALCULATION: new way to compute all unit costs using BOM. Allow to compute cost using BOM level sequence.
-- MRP: Generate new sequence on save.
-- DataBackup: update importId when its null with format IDDDMMYYHHMM.
-- Generating supplier order from partner form.
-- Mobile App: Add configuration for quality app on mobile app.
-- INVOICE: new process to print.
-- PERMISSIONS: Display dashlets for groups/roles/users using the permission in permission and meta permission form views.
-- OPPORTUNITY: Rename "opportunity type" to "type of need".
-- INVOICE: Change form view's organization to match the SaleOrder view.
-- PARTNER: Add link to employee form.
-- PRICE LIST: Add dashlets to display partner.
-- MRP: add boolean to exclude product without proposal in the result dashlet.
-- HR: TRAINING - Optimization of the menu by adding filters
-- MRP: Group proposals per supplier
-- HR: rework training and recruitment menus.
-- Data import: in the import file, add the possibility to fill selects either by values, title or translated titles.
-- Action Builder: Add feature to create templates using json models to send email.
-- FORECAST RECAP: sequence feature added for ForeCastRecap.
-- Advance data import: Add new config to check if new configuration is added on file and do import according to file.
-- UNIT: allows to translate name and label.
-- STOCK RULE: Add template on StockRule and StockConfig used for mail notifications.
-- CONFORMITY CERTIFICATE: display external reference on printing.
-- TIMESHEET: new config to display line numbers.
-- Advanced Import: Add support of imported records removal.
-- SALE ORDER: Recompute unit price when hideDiscount is true.
-- OPPORTUNITY: Auto fill sale-order form and cancel linked sale orders on 'closed lost' status.
-- OBJECT DATA CONFIG: UX improvements and translations and change in export type.
-- ANALYTIC MOVE LINE: project field title changed and domain filter added.
-- CONTRACT: Set invoice date with newly added options for invoicing moment.
-- Inventory: Manage different type of inventory: yearly or cycle turning.
-- Address: Street have now a dedicated object.
-- SALE ORDER / PURCHASE ORDER / INVOICES: Lines panel height set to 30.
-- MOVE: add the possibility to choose a date while generating reverse move.
-- Contract: Add analytic information to contract lines.
-- MESSAGE TEMPLATE: help to suggest use of separator between email addresses.
-- PRODUCTION ORDER: user can define manuf order's planned end date while creating production order from product form.
-- PARTNER: new HTML field on partner for proforma.
-- Contract: added button to manually close contract if termination date was set in the future.
-- ContractLine: hide `isConsumptionLine` if not activated in Contract config.
-- Employee: Add a creation workflow and allow to automatically create or link a user.
-- TimesheetLine: Add reference to TeamTask and add time to charge field.
-- Timesheet: Change tab title.
-- Studio: Allowing to export all data without selecting any app builder.
-- Studio: Custom model editor - Added title property for model and removed required condition for AppBuilder.
-- MENUS: new organisation in CRM and Sales modules.
-- Mobile: Add new app setting for 'Task'.
-- JobPosition: Cannot open a position when status in on hold.
-- Purchase Order: remove IPurchaseOrder deprecated class.
-- Event: Allowing to suppress unsynchronized events.
-- Employee: Add birth department and city of birth in employee.
-- Employment Contract: Set form width to large.
-- Contract: partner/project filters improved.
-- APP BUILDER: Remove JsonCreator object.
-- ContractBatch: Set default bankDetails of partner to created invoice bankDetails.
-- PRICE LIST: hide historized price lists in pop-up view.
-- MARKETING: Precise domain for model in message template.
-- Change titles for productFamily.
-- CONTRACT: Set project on generated invoices.
-- ACCOUNT MOVE REVERSE: Selected reverse move date must not be after the date of the day
-- ACCOUNT MOVE REVERSE: add the possibility to choose to hide or not the move lines (origin and reverse) in bank reconciliation
-- Change google-plus icon by google one.
-- Sale Order Line: Replacing 'price' with 'priceDiscounted' in a Grid View along with PurchaseOrderLine and InvoiceLine
-- SUPPLY CHAIN: delete boolean manageInvoicedAmountByLine.
-- FUNCTION: new object function on Sales and CRM and new M2O on partner
-- CITIZENSHIP: Add new object citizenship on base and new M2O in country and employee
-- EMPLOYEE: Files management added domains and demo data
-- Inventory: Added calendar-view
-- change term "Description" to "Comment" in english and "Commentaire" in french
-- WEEKLY PLANNING: Days can be reordered and created.
-- PROJECT / REPORTINGS: Addition of new dashboard - "Planned charge".
-- INVENTORY: adding ODS file format in report selection type.
-- Quality Control: Set default printing setting and update translation.
-- INVOICE: Configure BIRT to generate an Excel and a Word file
-- KEYWORD: remove Keyword model.
-- Advanced Import: trim data before import.
-- ACCOUNTING: year and accountSet fields are set empty when company is changed.
-- ACCOUNTING CONFIGURATION AND REPORTED BALANCE: add a new journal parameter in accounting configuration named reported balance journal and this new parameter defines the journal used in the reported balance move line creation.
-- PARTNER: Checks the consistency of the address list of a partner.
-- EXCEPTION: Removing deprecated interface IException.
-- PORTAL CLIENT: Add config to choose the type of connection (from ABS or external).
-- DEMO DATA: Rename field data.
-- ACCOUNTING BATCH: alert when the closing annual accounts batch already ran.
-- CLIENT PORTAL: update the client form view.
-- USER: Mass generation of random passwords.
-- Advance data import: Set sequence of filetab and removed temporary file at the end which is created during the process.
-- ACCOUNTING REPORT: add ODS file formate in report export type.
-- FORECAST RECAP: reset fields while creating duplicate record.
-- PICKING ORDER: new comment field for picking order on partner.
-- INVOICE: Add field 'language' to change report language in company.
-- QUALITY CONTROL: Add send email option when status is finished.
-- EMPLOYEE: add emergency contact relationship.
-- INVOICE PAYMENT: additionnal informations
-- ACCOUNT CONFIG: update demo data for account config and 'is print invoices in company language' boolean is now at true by default.
-- Contract: change filter on project field.
-- TEAMTASKS: Creation from Same Order.
-- PROJECT: show sub-menu project list when project type is empty.
-- Financial Report: calculate total costs (per line) in chart and totals.
-- ACCOUNTING REPORT: add Analytic general ledger.
-- TIMETABLE: reworked timetables to have them work based on percentage of the order rather than on a per product basis. So far only for sale orders. Purchases to come.
-- HRconfig: moved fields 'Health service' and 'Health service address' to HR module.
-- STOCKMOVE: update stock move form view.
-- MetaScheduler: fix MetaScheduler form-view in axelor-base module.
-- AccountingReport: set configuration to display opening accounting moves default value to true.
-- SUPPLYCHAIN: auto-complete sale order when it has been completely invoiced.
-- Accounting situation: added two fields to manage the credit insurance.
-- BoM: added a menu showing personalized bills of materials.
+* Stock move: fixed scheduled outgoing stock move invoicing failing when the linked sale order has no team.
 
-## Bug Fixes
-- Studio: Fix import app without image.
-- Generation of Project/Phase from SaleOrder.
-- Contract: Fix issue of not saving currentContractVersion fields in form view.
-- ProductTaskTemplate: fix button display issue for edit and remove buttons on tree view.
-- Employee: Fix issue of not saving each phase of creation process.
-- Marketing: Fix error when trying to generate an event per target.
-- Contract: Fix import error in data-init.
-- BUSINESS PROJECT: Report printing Division by zero.
-- UnitCostCalculation: Fixed the date format in the csv export name file.
-- BONUS MGT: Fix formula variable error of human resource when computing amounts.
-- INVOICE: Hide Due amount in report while printing "Original invoice / Updated copy".
-- PurchaseOrder: Fill order date with sale order creation date when generating puchase order from sale order with interco.
-- Purchase Order: Rename field 'priceDisplay' to 'displayPriceOnQuotationRequest'.
-- INVOICE: Reduce font size of tax table in Invoice printing.
-- PURCHASE ORDER PRINTING: display buyer email and phone as in sale order printing.
-- ACCOUNT MOVE REVERSE: add translation.
-- Transactionnal: correction and standardisation of rollback.
-- CONFIGURATOR BOM: product, qty and unit are displayed in the grid-view.
-- SALE ORDER LINE: fixed error when selecting a product.
-- Studio: Fix readonly fields are enabled when imported an application.
-- Studio: Fix error when click on wkf buttons.
-- Studio: Fix export app.
-- Advance Data Import: Fix indexOutOfBound Exception.
-- Advanced Data Import: Specify truncated value to sampleLines for large string.
-- REPORTED BALANCE: corrected abnormal amount in reported balance move lines if there was no partner associated to it.
-- REPORTED BALANCE BATCH: the case where reported balance date on fiscal year is missing is now correctly managed.
-- PURCHASE ORDER: fix issue in 'discountTypeSelect' of Purchase Order Line Form.
-- Advanced Data import:  fix issue of not generating info in log file when error occurred on import.
-- Studio: fix m2o to metafile's widget property, display image,binarylink option.
-- Advance data import: fix search issue, changed default import type of relational field to New and add import if condition for required Fields.
-- Advance data import: Fix Data import error when there is same object in two different sheets.
-- INVOICE: fix issue of invoice copy.
-- TEAMTASK: Add fullname in demo data.
-- Timesheet line: Duration label issue when created from mobile app.
-- Purchase: Corrected translation of purchase not configured.
-- SALEORDERLINE: Issue when Production module isn't installed.
-- Invoice: replace field "irrecoverablestatusSelect" to "irrecoverableStatusSelect".
-- SALE ORDER: fix error generating project without salemanUser.
-- Advance Import: Resolve ArrayIndexOutOfBound exception.
-- STOCK: Link back order with saleOrder or purchaseOrder.
-- ADDRESS: when there is one address on partner it is treated as a default address.
-- LEAVE REQUEST: Add error when leave reason has no unit.
-- LEAVE REQUEST: Set duration value 0 if day planning of selected weekly planning is empty
+## [9.1.5] (2026-08-13)
 
-[5.2.4]: https://github.com/axelor/axelor-open-suite/compare/v5.2.3...v5.2.4
-[5.2.3]: https://github.com/axelor/axelor-open-suite/compare/v5.2.2...v5.2.3
-[5.2.2]: https://github.com/axelor/axelor-open-suite/compare/v5.2.1...v5.2.2
-[5.2.1]: https://github.com/axelor/axelor-open-suite/compare/v5.2.0...v5.2.1
-[5.2.0]: https://github.com/axelor/axelor-open-suite/compare/v5.1.13...v5.2.0
+### Fixes
+#### Base
+
+* Upgrade to AOP 8.2.3
+* Partner: fixed Client Situation report balances not displayed when the partner has no assigned user.
+* Price list line: fixed the number of decimals not taken into account when creating a price list line.
+* Address: remove geocoding call from repository save to prevent latency and failures on bulk/API saves, reuse HTTP client for map geocoding calls, and cache repeated geocoding lookups.
+* Partner: fixed clearing the registration code not clearing SIREN, NIC and tax number, and wrongly showing the invalid registration code label.
+
+#### Account
+
+* Chart of accounts (FR): updated the French general chart of accounts (PCG) to the 2026 version in the l10n referential and demo data.
+* Invoice: fixed invoice category not being filled for customer refund invoices.
+* Invoice: fixed invoice term remaining amount not updated when reconciling a payment voucher's excess payment move line against another invoice from the move line.
+* Invoice term: fixed bank details wrongly required with outgoing Direct debit / IPO / Exchanges payment modes.
+* UMR: fixed umrNumber auto-fill generating duplicate values for the same company/partner/date.
+* Accounting report: fixed account sort order in custom accounting report detail rows.
+* Analytic distribution: fixed a rounding drift where the sum of generated analytic move lines could differ from the source amount.
+* Fixed asset: fixed economic and IFRS duration in month set from periodicity type instead of the category duration when generating a fixed asset.
+* Payment voucher: fixed the payment wizard showing incorrect due dates and origins on opening, before searching for items to pay, and when loading or resetting selected lines.
+* Account: fixed automatic partner account creation mode not being applied during chart of accounts and demo data installation.
+* Invoice: fixed a zero-amount supplier invoice (created from mixed stock moves) being blocked at ventilation with a misleading 'already been paid' error.
+
+#### Bank Payment
+
+* Payment session: fixed missing file error issue on bank order confirmation.
+
+#### Budget
+
+* Budget: fixed 'Compute budget distribution' failing with an arithmetic error when the budget key covers an amount that does not divide evenly, and fixed a stray unallocated cent left on the last budget line in that case.
+
+#### Cash Management
+
+* Forecast recap: fixed an issue where an invoice entry reconciled with its payment was still shown as an outstanding payable in the cash flow forecast
+
+#### Contract
+
+* Contract batch: fixed 'Display related contracts' preview not matching the contracts actually processed by the invoicing batch.
+
+#### CRM
+
+* Opportunity: fixed status changes from the list view allowing a missing partner or loss reason.
+
+#### Helpdesk
+
+* Helpdesk: fixed deadline date being cleared when saving a ticket with SLA disabled.
+
+#### Human Resource
+
+* Project: fixed filter on project task of waiting and validated timesheet line dashlets on saved timesheet lines.
+
+#### Production
+
+* Production: fixed MO and operation staying "In Progress" after a partial finish already covers the planned quantity.
+* Production: replaced a NullPointerException with a clear configuration error when computing cycles without a production process line.
+* Production: fixed an issue where fully consumed raw materials were omitted from the first manufacturing order closing cost sheet.
+* Manuf order: fixed subcontracted manufacturing order production being blocked when the goods receipt lacks a shipment reference/date, by carrying it over automatically from the goods receipt linked to the subcontracting service purchase order.
+* Manufacturing order: fixed inconsistent stock move types generated during partial production declarations of a subcontracted manufacturing order, now generating goods receipts for all declarations.
+* Production: fixed NPE when adding a consumed product to an operation with no consumed products (per-operation consumption mode).
+
+#### Quality
+
+* Control plan frequency: fixed missing error message when creating a control plan frequency with an already existing name.
+
+#### Sale
+
+* Sale order: fixed global percentage discount computing a wrong discount on the last order line when its quantity is greater than 1.
+* Sale order: fixed the version number field being shown on sale orders when the quotation/order split is enabled, since it has no functional purpose there.
+
+#### Stock
+
+* Stock: fixed invoice ventilation being incorrectly blocked after generating a new stock move from a return.
+* Stock correction: allowed selecting or creating a tracking number with no prior stock history.
+
+#### Supply Chain
+
+* Stock move: fixed the invoicing status staying at 'Not invoiced' after ventilating a supplier invoice that was manually linked to the stock move without invoice lines generated from it.
+* Invoice/Order line: fixed unit price and discounted price columns sharing the same title.
+* Supplychain: fixed MRP purchase proposals generating duplicate purchase order lines for the same product instead of consolidating them.
+
+
+### Developer
+
+#### Helpdesk
+
+TicketServiceImpl constructor changed: AppHelpdeskRepository/AppBaseService params
+replaced by AppHelpdeskService.
+
+#### Production
+
+- ProdProcessLineComputationService: modified getNbCycle method signature to throw AxelorException.
+
+#### Quality
+
+Added `ControlPlanFrequencyService.checkUniqueName(ControlPlanFrequency)` method.
+
+## [9.1.4] (2026-07-31)
+
+### Fixes
+#### Base
+
+* Partner: fixed registration number cleaning to also strip dots, slashes and hyphens (not just spaces) before validation and SIREN/NIC extraction.
+* Base: fixed Client Situation report showing no sale orders when the partner has no assigned user.
+
+#### Account
+
+* Account: fixed the direction of VAT lines on accounting cutoff moves.
+* Invoice: fixed ventilation check on invoice category ignoring displayItemsCategoriesOnPrinting config.
+* Accounting batch: fixed the analytic distribution being lost when several move lines are merged into one for the 'Accounting cut-off' batch.
+* Invoice: fixed HTML tags in notes causing XML rejection by converting HTML fields to plain text before note creation.
+* PaymentReminder: settled invoice terms still printed on the PDF (missing amount_remaining filter)
+* Accounting report: fixed wrong values when the acquisition date of fixed asset is equal to the report start date for report type 'Summary of gross values and depreciation'.
+* Invoice: fixed the title displayed on the credit notes search popup when merging credit notes.
+* Account: fixed missing reported-balance lines for some partners when closing annual accounts with partner allocation enabled.
+* MoveLine: fixed VAT system priority to check supplier's VAT on delivery before account's VAT system.
+* Account: fixed negative lines not being removed from payment sessions on the first attempt.
+* Period: fixed period closure to only process moves from selected journals when closing per journal.
+* Invoice: fixed the GED folder keeping the pre-ventilation invoice number after ventilation.
+
+#### Bank Payment
+
+* Bank statement line: fixed BIRT report being empty when bank statement line tables have different physical column orders.
+
+#### Budget
+
+* Global budget: fixed a LazyInitializationException when creating the default budget version.
+
+#### CRM
+
+* CRM: fixed the lead's description not being copied onto the generated opportunity's Customer description field.
+
+#### Human Resource
+
+* Project planning time: fixed unique constraint error when saving multiple planning lines with the same display planned time.
+* Partner: fixed default company not being set on the partner created from the employee form.
+
+#### Production
+
+* Product: fixed the access to the parent bill of material from the 'Where-used list' dashlet.
+* Production: fixed MRP calculation creating irrelevant manufacturing proposals for unrelated products.
+* Sale order line: fixed the domain on production process field to filter by company.
+
+#### Sale
+
+* Sale order: fixed manually edited delivery/invoicing address text being overwritten on every save.
+* Sale: fixed Cart sale order generation when a trading name is required.
+
+#### Stock
+
+* Stock rules: fixed alert email not sent when recipients are resolved from the user/team templating formula.
+* Stock: fixed an issue in tracking number forms.
+* Stock: fixed inventory validation failing when tracked and untracked quantities are mixed.
+* Stock: fixed untranslated chart status labels caused by corrupted or unnormalized locale values.
+* StockMove: reset fullySpreadOverLogisticalFormsFlag when a LogisticalForm is deleted or set back to draft.
+
+#### Supply Chain
+
+* Purchase Order: fixed purchase order amountInvoiced not updated for a credit note generated from a reversion stockMove.
+* Supplychain: fixed Cart stock location not defaulted from Partner and cleared when generating the Sale Order.
+* Mass stock invoicing: Set fiscal position from partner when invoicing a standalone stock move.
+* Purchase order line: fixed line editor being wrongly marked as modified on open when analytic accounts were already set.
+* Purchase order: fixed receipt state staying on 'Partially received' when a line's quantity is corrected to 0.
+* Sale order: fixed the invoicing state wrongly showing 'Partially invoiced' on a sale order fully reimbursed by a refund invoice generated from a stock move reversion, with no prior sale invoice.
+* Supplychain: fixed new delivery note generated after editing a confirmed sale order using the original quantity instead of the newly edited one.
+* Purchase order line: fixed the 'Invoiced' flag no longer being set when ventilating a direct invoice, since business-project was removed.
+* Sale/Purchase: fixed timetable invoicing status and re-invoicing checks breaking after invoice merging.
+* Stock move: fixed incoming partial invoices being marked as fully invoiced after ventilation.
+* Invoicing and purchase orders: fixed non-deductible taxes being applied to unrelated deductible tax lines.
+
+
+### Developer
+
+#### Account
+
+The `InvoiceServiceImpl` constructor now requires a `DMSFileRepository` parameter. Custom
+subclasses must inject and forward this dependency.
+
+#### Production
+
+`MrpServiceProductionImpl#createManufOrderMrpLines` gained a new `boolean producedProductInScope`
+parameter.
+
+---
+
+Changed SaleOrderLineDomainProductionService.getProdProcessDomain parameters from (saleOrderLine) to (saleOrderLine, saleOrder).
+
+#### Sale
+
+The CartSaleOrderGeneratorServiceImpl and CartSaleOrderGeneratorSupplychainServiceImpl constructors now require an AppBaseService parameter.
+
+#### Stock
+
+```sql
+-- Script to update fully_spread_over_logistical_forms_flag field to keep consistent data. Please check data before applying.
+UPDATE stock_stock_move sm
+SET fully_spread_over_logistical_forms_flag = FALSE
+WHERE sm.fully_spread_over_logistical_forms_flag = TRUE
+  AND EXISTS (
+    SELECT 1 FROM stock_stock_move_line sml
+    JOIN sale_sale_order_line sol ON sol.id = sml.sale_order_line
+    WHERE sml.stock_move = sm.id AND sol.type_select = 0   -- TYPE_NORMAL
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM supplychain_packaging_line pl
+    JOIN supplychain_packaging pkg ON pkg.id = pl.packaging
+    JOIN stock_stock_move_line sml ON sml.id = pl.stock_move_line
+    JOIN stock_logistical_form lf ON lf.id = pkg.logistical_form
+    WHERE sml.stock_move = sm.id AND lf.status_select = 3
+  );
+```
+
+#### Supply Chain
+
+The SaleOrderServiceSupplychainImpl constructor now requires a SaleOrderLineQtyToDeliverService parameter.
+
+---
+
+Changed the protected method signature
+`isStockMoveInvoicingPartiallyActivated(Invoice)` to
+`isStockMoveInvoicingPartiallyActivated(StockMove)`.
+
+---
+
+`PurchaseOrderLineTaxComputeService#computeAndAddTaxToList` now requires a
+`Map<PurchaseOrderLineTax, Set<PurchaseOrderLine>>` argument containing the purchase order lines
+that contributed to each aggregated tax line. Custom callers and implementations must collect
+and pass this contribution map.
+
+## [9.1.3] (2026-07-17)
+
+### Fixes
+#### Base
+
+* User: fixed the password pattern config key after the upgrade to AOP 8.2.
+* Fiscal position: fixed wrong tax domain on tax equivalence preventing proper reverse charge setup when replacement tax has a different rate than the original tax.
+* User: fixed the password change that no longer worked after the upgrade to AOP 8.2.
+* Product model: fixed wrong tab title 'Product' to display 'Product models' when opening a product model form.
+* Data backup: fixed AutoImportModelMap using natural keys that are not guaranteed unique and required causing silent data loss on restore.
+* Import configuration: fixed not null violation of data file on import configuration while using S3 storage.
+* Partner: fixed 'Fill from Sirene API' button triggering name validation before the API fills it.
+
+#### Account
+
+* Accounting batch: fixed the wrong currency amount on the merged move line generated by the 'Accounting cut-off' batch when several move lines are merged into one.
+* Invoice: fixed an issue where changing the due date on a draft invoice prevented further editing and left invoice term amounts out of sync with the invoice lines.
+* Invoice: fixed a blocking invoice category error when validating with the 'Skip ventilation step' option enabled; the category is now computed automatically before validation.
+* Payment session: fixed credit note invoiceTerm staying marked as paid after cancellation.
+* Reconcile: fixed wrong remaining amounts on invoice terms and invoices when reconciling multicurrency entries.
+* Move template: added a warning at validity check when 'Compute tax at creation' is enabled while the template also contains tax lines.
+* Accounting batch: fixed wrong Groovy expression error in DebtRecovery printing template file name.
+* BankDetails: add field InvoiceNoteType.
+* Account: fixed fully allocated advance payment with VAT on payment still being proposed on subsequent customer invoices.
+* InvoicingPaymentSituation: allowed selecting the same company on several lines as long as one bank details remains available, enforcing uniqueness on the company/bank details couple.
+
+#### Cash Management
+
+* Forecast recap: fixed double counting on partially invoiced orders.
+
+#### Contract
+
+* Contract: fixed invoice origin field always shows version 0 contract ID for versioned contracts.
+* Partner: fixed the display of supplier/customer contract panels when partner is not a supplier/customer.
+
+#### CRM
+
+* Lead: fixed company department in generated contact from lead.
+
+#### Human Resource
+
+* EXPENSE: fixed NPE when refreshing an expense after adding an kilometric expense line.
+
+#### Production
+
+* Prod process: fixed filter on stock location of residual product and produced product fields.
+
+#### Stock
+
+* Stock: restore automatic tracking number assignment during Mass Transfer Pick step.
+* Stock move: fixed billing address not displayed on delivery BIRT report when address position is set to right.
+
+#### Supply Chain
+
+* Stock move: fixed error when invoicing stock moves for service products without a stock unit.
+* Sale/Purchase order: fixed merge quotations action allowing to merge a single quotation.
+* Stock move: fixed an error when reverting a merged stock move linked to multiple sale orders.
+* Purchase request: fixed supplier details not populated on generated purchase order.
+
+
+### Developer
+
+#### Base
+
+`TaxEquivService#getTaxDomain(TaxEquiv, boolean, boolean)` signature changed to `getTaxDomain(TaxEquiv)`.
+
+---
+
+Password management realigned with the AOP 8.2 flow (AuthService.changePassword): the inline
+password fields no longer worked (the platform stopped encrypting transientPassword on save) and
+were removed; the platform "Change password" button is used instead.
+
+Removed public API (adapt custom modules): UserService.changeUserPassword /
+getPasswordPatternDescription, UserController.validate / validatePassword / generateRandomPassword.
+
+The "password changed" email is now sent from AuthServiceBaseImpl (bound in BaseModule) on any
+AuthService.changePassword when User.sendEmailUponPasswordChange is true (admin change + batch,
+never self-service); the flag is one-shot. Password complexity is now enforced by the AOP pattern
+policy instead of Java.
+
+Configuration migration in axelor-config.properties (rename + enable):
+```
+# before
+user.password.pattern = <regex>
+# after
+user.password.pattern.enabled = true
+user.password.pattern.value = <regex>
+```
+
+To keep a clean meta_action table, run:
+```sql
+DELETE FROM meta_action WHERE name IN (
+  'action-user-validate-password',
+  'action-user-generate-random-password',
+  'action-attrs-user-generate-random-password',
+  'action-method-user-generate-random-password'
+);
+```
+
+#### Account
+
+- Added InvoiceTermRecordService as a constructor parameter to InvoiceTermServiceImpl.
+- Removed the unused InvoiceTermService constructor parameter from InvoiceTermRecordServiceImpl.
+- Added new method boolean checkIfAmountCustomizedInvoiceTerms(List<InvoiceTerm>) to the InvoiceTermService.
+
+---
+
+Invoice form view: added the action-method 'action-invoice-method-compute-invoice-category' into the 'action-invoice-group-before-validate' action-group
+
+---
+
+- Invoice: removed specificNoteOnInvoiceToDisplayPanel and added bank detail note computation in note lists on ventilation.
+
+#### Stock
+
+Added the TrackingNumberService to the MassStockMoveNeedToPickedProductServiceImpl constructor
+
+#### Supply Chain
+
+- PurchaseRequestToPoCreateServiceImpl: added protected `setPurchaseOrderSupplierDetails(PurchaseOrder)` — override and call `super` to populate additional supplier fields on the generated PO.
+- PurchaseRequestToPoCreateServiceSupplychainImpl: constructor updated with a new `AccountConfigService` parameter.
+
+## [9.1.2] (2026-07-02)
+
+### Fixes
+#### Base
+
+* Upgrade to AOP 8.2.2
+* Partner Sirene API: fixed null value in street name computation.
+* Data backup: fixed 'Update Import Id' failing for entities with joined table inheritance, and fixed long type fields incorrectly taking the import id value.
+* Product: reset revaluation section fields on product copy.
+* Partner Sirene API: added missing siren api buttons on grid view of customer and supplier.
+* Base: fixed address city selection to show only cities matching the entered zip code.
+* Data Backup: fixed backup creation failing when 'Update Import Id' option is enabled for entities using joined inheritance.
+* Barcode: fixed EAN_13 barcode type to accept 13-digit serial numbers.
+* Updated xsd schema URL to fix a build issue.
+* Product: improved performance when editing a product referenced in a large number of price lists.
+* Product category: fixed drag and drop in tree view.
+* Discount: fixed discount amount not being emptied after changing discount type select
+* added missing french translation for 'Template Rules' and 'Routings'.
+* Update studio dependency to 4.0.7
+* Unit conversion: display a clear error message when the formula evaluation fails.
+* Base: fixed duplicate default address on partner after merge.
+
+#### Account
+
+* Reconciliation: fixed NPE when unlettering an advance payment move with tax payment move lines having no reconcile.
+* Invoice line: fixed duplicate product, filter on supplier and type fields briefly shown on new line popup.
+* Account: fixed ArithmeticException when saving a tax line with rate exceeding 2 decimal digits.
+* Invoice: fixed invalid PDF signature on printed invoice; single copy is served unchanged and multiple copies are re-signed after merging.
+* Move line/Move line query/Reconciliation: display an error message when a selected moveLine belongs to an invoice with a pending payment.
+* Invoice: fixed ventilation failing with tax amounts not equal when several invoice lines share the same product account with analytic distribution template.
+* Invoice: fixed regenerated invoice PDF copies being returned without the certificate signature.
+* Invoice: removed 'Updated copy' option from the Reports print wizard for supplier invoices and supplier credit notes.
+* Move line: fixed lettering without partner ignoring payment difference threshold, causing always-partial reconciliation.
+* Account: fixed SemanticException when using AND operator in Analytic Move Line Query filter.
+* Invoice: pre-fill the default account and taxes on invoice lines without a product using the partner's accounting situation.
+* Account: fixed reverse-charge VAT lines missing on auto counterpart when supplier has a default expense account.
+* Invoice term : fixed readonly condition of due date in form view opening from menu.
+* Payment Voucher: display proper error message when cheque deposit journal is not configured.
+* Accounting dashboard: fixed error when opening the dashboard caused by invalid date arithmetic in chart queries.
+* Move line: fixed the display of the company currency in grid views and form.
+* Move: fixed financial discount miscalculated on manual journal entries with reverse-charge (intra-EU / import) VAT.
+* Invoice: fixed cannot set back to draft a canceled invoice due to required condition.
+* Account: fixed Mass Entry validation failing when move lines have different partners.
+* Accounting batch: fixed the date of analytic distribution lines on generated moves to use the move accounting date instead of the origin date for the 'Accounting cut-off' batch.
+* Invoice: fixed anomaly traceback not saved when mass ventilation fails.
+* Invoice: fixed internal server error when recording a payment on a foreign currency invoice where the company-currency micro-residual converts to zero in the invoice currency.
+
+#### Bank Payment
+
+* Bank payment: fixed CFONB120 multi-period import rejected on non-chronological period order.
+
+#### Contract
+
+* Contract: fixed 'Initial price per year' and 'Yearly price revalued' showing 0.00 in contract line grid on draft amendments.
+* Contract: fixed fiscal position not being set on generated invoice.
+* Contract: fixed close button appears after a termination that failed due to the notice period.
+
+#### CRM
+
+* Event: fixed opportunity, event lead and partner linked via relatedToSelect not displayed on event-grid.
+
+#### Human Resource
+
+* Expense: fixed ventilation failing when the VAT system could not be resolved from the partner accounting situation.
+* HR: fixed Employee grid not refreshing the contact partner full name inline after editing the form.
+
+#### Production
+
+* Production: fixed stock reservation not requested when planning a Manufacturing Order with 'Auto request qty for manuf orders' enabled.
+* Production: fixed sub manufacturing orders being created with zero or negative quantity when sub-component stock covers the requirement.
+* Sale order: fixed the error on confirmation when both customerStockMoveGenerationAuto and autoPlanManufOrderFromSO are activated.
+* Manuf order: fixed duplicate in and out stock moves while planning manuf orders from diff tabs.
+* Manuf order : fixed no session error when partially completing a manufacturing order with tracking number
+
+#### Sale
+
+* Sale order: fixed global discount changes not being applied to the order lines, so the per-line discounts (and the discounts carried to the invoice) are now recomputed when the global discount type or amount changes.
+* Sale order: on the editable sale order line grid, the discount type and discount amount fields are now correctly set as read-only according to the global discount management.
+* Sale order: fixed subtotal cost price that could not be modified.
+* Sale order: fixed add line from configurator button not available on confirmed sale order being edited.
+* Sale order: made the per-line discount fields read-only in the editable grid when a global discount is set on the order, consistently with the form view.
+* Sale dashboard: fixed inconsistencies between charts due to incorrect date bounds, missing company filter, and non-YTD comparison in turnover charts.
+
+#### Stock
+
+* Product: fixed stock indicators to show variants stocks for product model.
+* Mass stock move: fixed an error occurring when using 'Pick all' or 'The rest'.
+* Tracking number: fixed error when creating new tracking number from menu.
+* Stock rules: fixed wrong refill type filter when product by companies feature is enabled.
+
+#### Supply Chain
+
+* Sale order: fixed deletion of a sale order line failing when a canceled stock move line still referenced it.
+* Stock history update batch: fix the blocking errors raised on a second run over the same period and ensure the stock rotation category is correctly assigned
+* Stock depreciation: restrict product selection to stock-managed products.
+* Sale: fixed mass invoicing to process only selected customer deliveries.
+* Stock: fixed logistical form dashlet on customer deliveries incorrectly showing all existing logistical forms instead of only those linked to the stock move, and added automatic logistical form creation on outgoing stock move save.
+* Stock move: fixed logistical form not cleared when duplicating a stock move.
+* Purchase: fixed mass invoicing to process only selected delivery receipts.
+* MRP: fixed issue with deleted record reappearing in draft status after refresh.
+* Purchase order: fixed invoice generation allowed on a totally invoiced purchase order.
+* Supplychain: fixed MRP Family not grouping purchase proposals when demands fall exactly on the day window limit.
+* Purchase: fixed invoice qty set to 0 when regenerating after cancellation.
+* MRP: fixed duplicate sales forecast lines in MRP result.
+
+
+### Developer
+
+#### Base
+
+Add a new ProductSupplychainServiceImpl that extends ProductServicePurchaseImpl
+
+#### Account
+
+- MoveLineConsolidateService: modified findConsolidateMoveLine method signature, changed first parameter from Map<List<Object>, MoveLine> map to Map<List<Object>, List<MoveLine>> map.
+
+---
+
+Added `AccountingSituationService` and `FiscalPositionAccountService` as constructor parameters to `InvoiceLineGenerator`.
+Added `AccountingSituationService` and `FiscalPositionAccountService` as constructor parameters to `InvoiceLineServiceImpl` and its subclasses.
+
+#### Production
+
+- SaleOrderLineMOGenerationSingleLineService: `generateManufOrders()` signature updated — added `BigDecimal grossQtyRequested` parameter.
+- SaleOrderLineMOGenerationService: `generateManufOrders()` signature updated — added `BigDecimal grossQtyRequested` parameter.
+- ProductionOrderSaleOrderMOGenerationService: `generateManufOrders()` signature updated — added `BigDecimal grossQtyRequested` parameter.
+
+#### Sale
+
+-- Script
+ALTER TABLE sale_sale_order_line
+  ADD COLUMN IF NOT EXISTS manual_sub_total_cost_price numeric(20, 3),
+  ADD COLUMN IF NOT EXISTS is_sub_total_cost_price_manually_edited boolean;
+
+#### Supply Chain
+
+The `onDelete` actions `action-mrp-validate-delete-mrp-reset` and
+`action-mrp-validate-delete-multi-mrp-reset` have been removed from the MRP form and
+grid views. The `MrpManagementRepository.remove()` override that was incorrectly
+resetting and saving the record instead of deleting it has been replaced with a correct
+implementation that deletes associated `MrpLine` records before removing the MRP itself.
+
+```sql
+DELETE FROM meta_action WHERE name = 'action-mrp-validate-delete-mrp-reset';
+DELETE FROM meta_action WHERE name = 'action-mrp-validate-delete-multi-mrp-reset';
+```
+
+## [9.1.1] (2026-06-18)
+
+### Fixes
+#### Base
+
+* Birt report: fixed file not found error and concurrent generation conflicts when printing birt reports.
+* Expense: fixed electronic signature failure when the uploaded file has a short filename.
+* Product: fixed missing fields when company-specific product configuration is disabled.
+* Advance export: fixed language in batch when user is null.
+* Account management: prevent duplicate company entries per tax.
+* App base: added a separate configuration to activate email sending on stream messages.
+* Address: removed the department field.
+
+#### Bank Payment
+
+* Bank reconciliation: fixed wrong translation of warning message when selecting lines.
+* Bank order: included the invoice's printedPDF file in the 'Display invoice' document list.
+* BANKORDER : allowed multidate for pain.xxx.cfonb160.dco type of BankOrderFileFormat
+* Bank order: removed DatatypeConfigurationException, JAXBException and IOException from public method signatures.
+
+#### Production
+
+* Production: fixed configurator-generated ProdProcessLine not inheriting startingDuration, endingDuration, and setupDuration from the WorkCenter, leading to underestimated BOM cost prices.
+* Production: fixed tracking number continuity during partial production.
+
+#### Project
+
+* Project: moved 'Dashboard' and 'Activities' into a new panel tab.
+
+#### Purchase
+
+* Call tender: Add checkbox 'Attach file in email'
+* Provide feature for Product attribute configuration for call tender
+* Call tender: Add a new integer field Delivery time (days)
+* Blocking: improved code organization for purchase blocking
+* Purchase Requests: fixed an issue where purchase order was not linked with PurchaseRequest
+* Call tender : Provided the way to compare the offers (Product attributes by supplier & Suppliers' response by product)
+* Call tender need: Added a new html text field description
+* Call tender: Added report configuration
+* Call tender: Added Button 'Import offer' to import the excel file per supplier.
+* Call tender: Split button 'Send call for tenders' into 'Generate emails' & 'Send emails'
+
+#### Stock
+
+* Stock move: fixed logistical forms dashlet showing all logistical forms instead of only those linked to the current stock move.
+
+
+### Developer
+
+#### Bank Payment
+
+Added MetaFiles as parameter in BankOrderLineOriginServiceImpl constructor
+Added MetaFiles as parameter in BankOrderLineOriginServiceHRImpl constructor
+
+---
+
+The following public method signatures were changed to remove checked exceptions JAXBException, IOException, and DatatypeConfigurationException:
+
+- InvoicePaymentMoveCreateService.createInvoicePaymentMove(InvoicePayment)
+- InvoicePaymentValidateService.validate(InvoicePayment, boolean)
+- InvoicePaymentValidateService.validate(InvoicePayment)
+- BankOrderService.validate(BankOrder)
+- BankOrderService.generateFile(BankOrder)
+- BankOrderValidationService.validateFromBankOrder(InvoicePayment, boolean)
+- BankOrderValidationService.realize(BankOrder)
+- BankOrderValidationService.validatePayment(BankOrder)
+- BankOrderValidationService.confirm(BankOrder)
+- BankOrderFileService.generateFile()
+- BankOrderFile00800101Service.generateFile()
+- BankOrderFile00800102Service.generateFile()
+- BankOrderFile00100102Service.generateFile()
+- BankOrderFile00100103Service.generateFile()
+- BankOrderFileAFB160DCOService.generateFile()
+- BankOrderFileAFB160Service.generateFile()
+- BankOrderFileAFB320XCTService.generateFile()
+- BatchBankPaymentService.createBankOrder(Batch)
+- BatchBankPaymentService.createBankOrderFromPaymentScheduleLines(Batch)
+- BatchBankPaymentService.createBankOrderFromMonthlyPaymentScheduleLines(Batch)
+
+#### Purchase
+
+The `PURCHASE_BLOCKING` constant has been moved from `axelor-base` to `axelor-purchase` module
+for better modularity.
+
+**Migration:** No action required. The entity package remains `com.axelor.apps.base.db.Blocking`,
+so existing imports continue to work.
+
+---
+
+- PurchaseRequestServiceImpl consturctor is updated to introduce PurchaseRequestToPoCreateService
+
+## [9.1.0] (2026-06-15)
+
+### Features
+
+#### Base
+* App base: added a dedicated configuration to enable email sending on stream messages.
+* Product: added an option to conditionally display the Safety panel, and kept the company-specific panel visible even when no field is configured.
+* Partner: made the trading name available on the partner view (shared with the Intervention module).
+
+#### Account
+* Payment voucher: added a button to compute the total amount.
+* Move lines: added a summary bar on the grid and allowed editable selection of analytic move lines.
+* Closure assistant: disclosed additional information on the compute result screen.
+
+#### Bank Payment
+* Bank order: allowed multidate for the `pain.xxx.cfonb160.dco` file format.
+
+#### Human Resource
+* Leave request: added new leave units (business day, calendar day).
+
+#### Mobile Settings
+* Added configurations to control stock move display and tracking number validation on the mobile app.
+
+#### Maintenance
+* Added preventive maintenance management: an automatic generation batch (with anticipation days) and maintenance bills of materials with component management.
+* Integrated maintenance manufacturing orders into MRP, including in-progress orders.
+
+#### Production
+* Production process: added hazard phrase management on the process and its lines.
+
+#### Project
+* Project: moved 'Dashboard' and 'Activities' into a dedicated panel tab to speed up form loading.
+
+#### Purchase
+* Call for tenders: reworked offer sending — split 'Send call for tenders' into 'Generate emails' and 'Send emails', with an option to attach a file to the email.
+* Call for tenders: added offer import from an Excel file per supplier, and offer comparison views with charts (product attributes by supplier, suppliers' response by product).
+* Call for tenders: added report configuration and product attribute configuration.
+* Call for tenders need: added an HTML description field and a 'Delivery time (days)' field.
+* Purchase order line: added a pricing process triggered on product change.
+
+#### Sale
+* Sale order line: added a reference to the main sale order on its sub-lines.
+* Sale / purchase order: made the 'Show Lines' action respect the grid selection on quotation grids.
+
+#### Stock
+* Added a stock depreciation feature.
+* Stock move: added barcode management.
+* Inventory: added an option to block stock moves during an ongoing inventory.
+* Stock move report: take into account the title lines coming from the sale/purchase order.
+
+#### Supply Chain
+* MRP: added options to exclude a product family or category from MRP, and take planned manufacturing-order stock moves into account.
+
+### Changes
+
+#### Base
+* Address: removed the department field.
+* Company / workshops: replaced the stock location list with a dashlet.
+* Removed the tag automatically set from the company/trading name configuration.
+
+#### Account
+* Account management: changed the unique constraint to be company-specific.
+
+#### Sale
+* Sale order: removed the obsolete global-discount field.
+
+#### Stock
+* Stock move line: automatically fill the perishable and warranty settings.
+* Stock correction: added a control when validating during an ongoing inventory on the same stock location.
+
+#### Production
+* Manufacturing order: optimized the process and added a warning when starting an operation or a manufacturing order.
+
+#### Supply Chain
+* Purchase order: set the intercompany flag on generated purchase orders.
+* Mass invoicing: grouped the menu entries.
+* Sale order: convert sale orders with sub-lines into a stock move.
+
+### Fixes
+
+#### Base
+* Product: fixed product creation when the serial number already exists.
+* Partner: fixed the address retrieved from the SIRENE API.
+
+#### Account
+* Move / move line: fixed several display and computation issues (consistent partner display, amount-remaining recalculation, VAT system on tax-account change, hiding 'Generate tax lines' for incompatible origins).
+* Reconciliation: fixed reconciliation of tax move lines when no partner is set on OD moves.
+* Journal: fixed the sequence not being imported on newly generated company journals.
+* Period: fixed anomaly handling during the close process.
+* Payment voucher: fixed moves flagged as ignored in debt recovery being wrongly excluded.
+
+#### Bank Payment
+* Bank order: fixed SEPA file generation to use the company currency amount.
+* Bank reconciliation: prevent editing a move line linked to a validated bank reconciliation.
+* Payment session: fixed payment moves not being generated in some bank-order auto-confirmation cases.
+
+#### CRM
+* Catalog: fixed the email form not opening after sending an email.
+
+#### Human Resource
+* Timesheet line: fixed several issues (activity when the product is missing, computation, product check, missing editor buttons).
+* Expense: fixed product creation with category-based sequencing.
+
+#### Production
+* Manufacturing order: fixed stock move price and WAP computation when finishing, outsourcing cost, and order merging.
+* Cost sheet: fixed human cost valuation and now include same-day realized moves in the ratio.
+* Production process: fixed BOM decimals on phases and work center duration/changes (including configurator-generated lines).
+* CBN process: fixed NPEs occurring during the net requirements calculation.
+* Sale order line: fixed sub-line generation for deep BOM levels and NPEs on BOM change.
+
+#### Project
+* Project / task templates: fixed custom field behavior and task template time fields.
+
+#### Purchase
+* Purchase request: fixed purchase order generation/linking and added a company check to prevent an NPE.
+
+#### Sale
+* Sale order: fixed the 'Recalculate Prices' button resetting prices to zero, the product code being overwritten on regeneration, the configurator copy, and an NPE on customer product display.
+
+#### Stock
+* Stock move: fixed the available status and future-quantity computations (including the split tracking number configuration) and an NPE on creation.
+* Inventory: fixed an NPE when exporting to CSV.
+
+#### Talent
+* Fixed the job application form.
+
+#### Intervention
+* Fixed intervention generation from a contract.
+
+[9.1.6]: https://github.com/axelor/axelor-open-suite/compare/v9.1.5...v9.1.6
+[9.1.5]: https://github.com/axelor/axelor-open-suite/compare/v9.1.4...v9.1.5
+[9.1.4]: https://github.com/axelor/axelor-open-suite/compare/v9.1.3...v9.1.4
+[9.1.3]: https://github.com/axelor/axelor-open-suite/compare/v9.1.2...v9.1.3
+[9.1.2]: https://github.com/axelor/axelor-open-suite/compare/v9.1.1...v9.1.2
+[9.1.1]: https://github.com/axelor/axelor-open-suite/compare/v9.1.0...v9.1.1
+[9.1.0]: https://github.com/axelor/axelor-open-suite/compare/v9.0.11...v9.1.0

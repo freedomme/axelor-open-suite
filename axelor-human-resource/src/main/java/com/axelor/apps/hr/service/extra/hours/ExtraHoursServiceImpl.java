@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,26 +14,27 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.hr.service.extra.hours;
 
+import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.service.app.AppBaseService;
+import com.axelor.apps.hr.db.Employee;
 import com.axelor.apps.hr.db.ExtraHours;
 import com.axelor.apps.hr.db.ExtraHoursLine;
 import com.axelor.apps.hr.db.HRConfig;
 import com.axelor.apps.hr.db.repo.ExtraHoursRepository;
 import com.axelor.apps.hr.service.config.HRConfigService;
-import com.axelor.apps.message.db.Message;
-import com.axelor.apps.message.service.TemplateMessageService;
 import com.axelor.auth.AuthUtils;
-import com.axelor.exception.AxelorException;
-import com.google.inject.Inject;
+import com.axelor.message.db.Message;
+import com.axelor.message.service.TemplateMessageService;
 import com.google.inject.persist.Transactional;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
-import javax.mail.MessagingException;
+import org.apache.commons.collections.CollectionUtils;
 
 public class ExtraHoursServiceImpl implements ExtraHoursService {
 
@@ -62,8 +64,7 @@ public class ExtraHoursServiceImpl implements ExtraHoursService {
   }
 
   public Message sendCancellationEmail(ExtraHours extraHours)
-      throws AxelorException, ClassNotFoundException, InstantiationException,
-          IllegalAccessException, MessagingException, IOException {
+      throws AxelorException, ClassNotFoundException, IOException {
 
     HRConfig hrConfig = hrConfigService.getHRConfig(extraHours.getCompany());
 
@@ -80,14 +81,13 @@ public class ExtraHoursServiceImpl implements ExtraHoursService {
   public void confirm(ExtraHours extraHours) throws AxelorException {
 
     extraHours.setStatusSelect(ExtraHoursRepository.STATUS_CONFIRMED);
-    extraHours.setSentDate(appBaseService.getTodayDate());
+    extraHours.setSentDate(appBaseService.getTodayDate(extraHours.getCompany()));
 
     extraHoursRepo.save(extraHours);
   }
 
   public Message sendConfirmationEmail(ExtraHours extraHours)
-      throws AxelorException, ClassNotFoundException, InstantiationException,
-          IllegalAccessException, MessagingException, IOException {
+      throws AxelorException, ClassNotFoundException, IOException {
 
     HRConfig hrConfig = hrConfigService.getHRConfig(extraHours.getCompany());
 
@@ -105,14 +105,13 @@ public class ExtraHoursServiceImpl implements ExtraHoursService {
 
     extraHours.setStatusSelect(ExtraHoursRepository.STATUS_VALIDATED);
     extraHours.setValidatedBy(AuthUtils.getUser());
-    extraHours.setValidationDate(appBaseService.getTodayDate());
+    extraHours.setValidationDate(appBaseService.getTodayDate(extraHours.getCompany()));
 
     extraHoursRepo.save(extraHours);
   }
 
   public Message sendValidationEmail(ExtraHours extraHours)
-      throws AxelorException, ClassNotFoundException, InstantiationException,
-          IllegalAccessException, MessagingException, IOException {
+      throws AxelorException, ClassNotFoundException, IOException {
 
     HRConfig hrConfig = hrConfigService.getHRConfig(extraHours.getCompany());
 
@@ -130,14 +129,13 @@ public class ExtraHoursServiceImpl implements ExtraHoursService {
 
     extraHours.setStatusSelect(ExtraHoursRepository.STATUS_REFUSED);
     extraHours.setRefusedBy(AuthUtils.getUser());
-    extraHours.setRefusalDate(appBaseService.getTodayDate());
+    extraHours.setRefusalDate(appBaseService.getTodayDate(extraHours.getCompany()));
 
     extraHoursRepo.save(extraHours);
   }
 
   public Message sendRefusalEmail(ExtraHours extraHours)
-      throws AxelorException, ClassNotFoundException, InstantiationException,
-          IllegalAccessException, MessagingException, IOException {
+      throws AxelorException, ClassNotFoundException, IOException {
 
     HRConfig hrConfig = hrConfigService.getHRConfig(extraHours.getCompany());
 
@@ -161,5 +159,14 @@ public class ExtraHoursServiceImpl implements ExtraHoursService {
     }
 
     extraHours.setTotalQty(totalQty);
+  }
+
+  @Override
+  public void updateLineEmployee(ExtraHours extraHours) {
+    Employee employee = extraHours.getEmployee();
+    List<ExtraHoursLine> extraHoursLineList = extraHours.getExtraHoursLineList();
+    if (CollectionUtils.isNotEmpty(extraHoursLineList) && employee != null) {
+      extraHoursLineList.forEach(line -> line.setEmployee(employee));
+    }
   }
 }

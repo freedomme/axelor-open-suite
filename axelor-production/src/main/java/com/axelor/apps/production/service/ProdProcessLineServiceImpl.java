@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,65 +14,62 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.production.service;
 
-import com.axelor.apps.production.db.ProdHumanResource;
-import com.axelor.apps.production.db.WorkCenter;
-import com.axelor.apps.production.db.repo.ProdProcessLineRepository;
-import com.axelor.apps.production.db.repo.WorkCenterRepository;
-import com.google.inject.Inject;
+import com.axelor.apps.base.AxelorException;
+import com.axelor.apps.production.db.ProdProcess;
+import com.axelor.apps.production.db.ProdProcessLine;
+import com.axelor.utils.helpers.StringHelper;
+import jakarta.inject.Inject;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Comparator;
 import org.apache.commons.collections.CollectionUtils;
 
 public class ProdProcessLineServiceImpl implements ProdProcessLineService {
 
-  protected ProdProcessLineRepository prodProcessLineRepo;
+  protected WorkCenterService workCenterService;
+  protected final ProdProcessLineComputationService prodProcessLineComputationService;
 
   @Inject
-  public ProdProcessLineServiceImpl(ProdProcessLineRepository prodProcessLineRepo) {
-    this.prodProcessLineRepo = prodProcessLineRepo;
+  public ProdProcessLineServiceImpl(
+      WorkCenterService workCenterService,
+      ProdProcessLineComputationService prodProcessLineComputationService) {
+    this.workCenterService = workCenterService;
+    this.prodProcessLineComputationService = prodProcessLineComputationService;
   }
 
-  public Long getProdProcessLineDurationFromWorkCenter(WorkCenter workCenter) {
-    List<Long> durations = new ArrayList<Long>();
-
-    if (workCenter.getWorkCenterTypeSelect() == WorkCenterRepository.WORK_CENTER_TYPE_MACHINE
-        || workCenter.getWorkCenterTypeSelect() == WorkCenterRepository.WORK_CENTER_TYPE_BOTH) {
-      durations.add(workCenter.getDurationPerCycle());
+  @Override
+  public long computeEntireDuration(ProdProcess prodProcess, BigDecimal qty)
+      throws AxelorException {
+    long totalDuration = 0;
+    for (ProdProcessLine prodProcessLine : prodProcess.getProdProcessLineList()) {
+      totalDuration +=
+          prodProcessLineComputationService.computeEntireCycleDuration(null, prodProcessLine, qty);
     }
-
-    if (workCenter.getWorkCenterTypeSelect() == WorkCenterRepository.WORK_CENTER_TYPE_HUMAN
-        || workCenter.getWorkCenterTypeSelect() == WorkCenterRepository.WORK_CENTER_TYPE_BOTH) {
-      if (workCenter.getProdHumanResourceList() != null) {
-        for (ProdHumanResource prodHumanResource : workCenter.getProdHumanResourceList()) {
-          durations.add(prodHumanResource.getDuration());
-        }
-      }
-    }
-
-    return !CollectionUtils.isEmpty(durations) ? Collections.max(durations) : new Long(0);
+    return totalDuration;
   }
 
-  public BigDecimal getProdProcessLineMinCapacityPerCycleFromWorkCenter(WorkCenter workCenter) {
-    if (workCenter.getWorkCenterTypeSelect() == WorkCenterRepository.WORK_CENTER_TYPE_MACHINE
-        || workCenter.getWorkCenterTypeSelect() == WorkCenterRepository.WORK_CENTER_TYPE_BOTH) {
-      return workCenter.getMinCapacityPerCycle();
-    } else {
-      return new BigDecimal(1);
+  @Override
+  public Integer getNextPriority(ProdProcess prodProcess, Integer priority) {
+    if (priority == null
+        || prodProcess == null
+        || CollectionUtils.isEmpty(prodProcess.getProdProcessLineList())) {
+      return null;
     }
+    return prodProcess.getProdProcessLineList().stream()
+        .filter(ppl -> ppl.getPriority() > priority)
+        .min(Comparator.comparingInt(ProdProcessLine::getPriority))
+        .map(ProdProcessLine::getPriority)
+        .orElse(null);
   }
 
-  public BigDecimal getProdProcessLineMaxCapacityPerCycleFromWorkCenter(WorkCenter workCenter) {
-    if (workCenter.getWorkCenterTypeSelect() == WorkCenterRepository.WORK_CENTER_TYPE_MACHINE
-        || workCenter.getWorkCenterTypeSelect() == WorkCenterRepository.WORK_CENTER_TYPE_BOTH) {
-      return workCenter.getMaxCapacityPerCycle();
-    } else {
-      return new BigDecimal(1);
+  @Override
+  public String getHazardPhraseDomain(ProdProcess prodProcess) {
+    if (prodProcess == null || CollectionUtils.isEmpty(prodProcess.getHazardPhraseSet())) {
+      return "self IN (0)";
     }
+    return "self.id IN (" + StringHelper.getIdListString(prodProcess.getHazardPhraseSet()) + ")";
   }
 }

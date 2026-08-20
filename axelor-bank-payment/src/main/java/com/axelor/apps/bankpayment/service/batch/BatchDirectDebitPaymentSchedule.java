@@ -1,11 +1,12 @@
 /*
  * Axelor Business Solutions
  *
- * Copyright (C) 2020 Axelor (<http://axelor.com>).
+ * Copyright (C) 2005-2026 Axelor (<http://axelor.com>).
  *
- * This program is free software: you can redistribute it and/or  modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,42 +14,50 @@
  * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.axelor.apps.bankpayment.service.batch;
 
+import com.axelor.app.AppSettings;
+import com.axelor.app.AvailableAppSettings;
 import com.axelor.apps.account.db.AccountManagement;
 import com.axelor.apps.account.db.AccountingBatch;
 import com.axelor.apps.account.db.PaymentMode;
 import com.axelor.apps.account.db.PaymentSchedule;
 import com.axelor.apps.account.db.PaymentScheduleLine;
+import com.axelor.apps.account.db.Umr;
 import com.axelor.apps.account.db.repo.PaymentModeRepository;
 import com.axelor.apps.account.db.repo.PaymentScheduleLineRepository;
 import com.axelor.apps.account.db.repo.PaymentScheduleRepository;
 import com.axelor.apps.account.service.PaymentScheduleLineService;
 import com.axelor.apps.account.service.PaymentScheduleService;
 import com.axelor.apps.account.service.payment.PaymentModeService;
+import com.axelor.apps.account.service.umr.UmrService;
 import com.axelor.apps.bankpayment.db.BankPaymentConfig;
 import com.axelor.apps.bankpayment.service.config.BankPaymentConfigService;
+import com.axelor.apps.base.AxelorException;
 import com.axelor.apps.base.db.BankDetails;
+import com.axelor.apps.base.db.Batch;
+import com.axelor.apps.base.db.Company;
 import com.axelor.apps.base.db.Partner;
 import com.axelor.apps.base.db.repo.BankDetailsRepository;
 import com.axelor.apps.base.db.repo.BlockingRepository;
+import com.axelor.apps.base.db.repo.ExceptionOriginRepository;
 import com.axelor.apps.base.service.app.AppBaseService;
-import com.axelor.apps.tool.QueryBuilder;
+import com.axelor.apps.base.service.exception.TraceBackService;
 import com.axelor.db.JPA;
 import com.axelor.db.Query;
-import com.axelor.exception.AxelorException;
-import com.axelor.exception.db.repo.ExceptionOriginRepository;
-import com.axelor.exception.service.TraceBackService;
 import com.axelor.i18n.I18n;
 import com.axelor.inject.Beans;
+import com.axelor.utils.helpers.QueryBuilder;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import jakarta.inject.Inject;
 import java.io.File;
 import java.lang.invoke.MethodHandles;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +66,20 @@ public class BatchDirectDebitPaymentSchedule extends BatchDirectDebit {
 
   private static final Logger logger =
       LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+  protected BatchBankPaymentService batchBankPaymentService;
+  protected PaymentScheduleLineRepository paymentScheduleLineRepo;
+  protected UmrService umrService;
+
+  @Inject
+  public BatchDirectDebitPaymentSchedule(
+      BatchBankPaymentService batchBankPaymentService,
+      PaymentScheduleLineRepository paymentScheduleLineRepo,
+      UmrService umrService) {
+    this.batchBankPaymentService = batchBankPaymentService;
+    this.paymentScheduleLineRepo = paymentScheduleLineRepo;
+    this.umrService = umrService;
+  }
 
   @Override
   protected void process() {
@@ -94,21 +117,26 @@ public class BatchDirectDebitPaymentSchedule extends BatchDirectDebit {
       Preconditions.checkNotNull(
           companyBankDetails.getCurrency(),
           I18n.get("Currency in company bank details is missing."));
-      Preconditions.checkArgument(
-          new File(accountingBatch.getPaymentMode().getBankOrderExportFolderPath()).exists(),
-          String.format(
-              I18n.get("Bank order export folder does not exist: %s"),
-              accountingBatch.getPaymentMode().getBankOrderExportFolderPath()));
 
-      BankPaymentConfigService bankPaymentConfigService = Beans.get(BankPaymentConfigService.class);
-
+      String bankOrderExportPath = accountingBatch.getPaymentMode().getBankOrderExportFolderPath();
+      String dataExpotDir;
       try {
+        dataExpotDir = AppSettings.get().get(AvailableAppSettings.DATA_UPLOAD_DIR);
+
+        BankPaymentConfigService bankPaymentConfigService =
+            Beans.get(BankPaymentConfigService.class);
+
         BankPaymentConfig bankPaymentConfig =
             bankPaymentConfigService.getBankPaymentConfig(accountingBatch.getCompany());
         bankPaymentConfigService.getIcsNumber(bankPaymentConfig);
       } catch (AxelorException e) {
         throw new RuntimeException(e);
       }
+      Preconditions.checkArgument(
+          bankOrderExportPath != null && new File(dataExpotDir + bankOrderExportPath).exists(),
+          String.format(
+              I18n.get("Bank order export folder does not exist: %s"),
+              dataExpotDir + bankOrderExportPath));
     }
 
     QueryBuilder<PaymentScheduleLine> queryBuilder = QueryBuilder.of(PaymentScheduleLine.class);
@@ -125,7 +153,7 @@ public class BatchDirectDebitPaymentSchedule extends BatchDirectDebit {
     LocalDate dueDate =
         accountingBatch.getDueDate() != null
             ? accountingBatch.getDueDate()
-            : Beans.get(AppBaseService.class).getTodayDate();
+            : Beans.get(AppBaseService.class).getTodayDate(accountingBatch.getCompany());
     queryBuilder.add("self.scheduleDate <= :dueDate");
     queryBuilder.bind("dueDate", dueDate);
 
@@ -138,14 +166,16 @@ public class BatchDirectDebitPaymentSchedule extends BatchDirectDebit {
     queryBuilder.add(
         "self.paymentSchedule.partner.id NOT IN (SELECT DISTINCT partner.id FROM Partner partner LEFT JOIN partner.blockingList blocking WHERE blocking.blockingSelect = :blockingSelect AND blocking.blockingToDate >= :blockingToDate)");
     queryBuilder.bind("blockingSelect", BlockingRepository.DEBIT_BLOCKING);
-    queryBuilder.bind("blockingToDate", Beans.get(AppBaseService.class).getTodayDate());
+    queryBuilder.bind(
+        "blockingToDate",
+        Beans.get(AppBaseService.class).getTodayDate(accountingBatch.getCompany()));
 
     if (accountingBatch.getBankDetails() != null) {
       Set<BankDetails> bankDetailsSet = Sets.newHashSet(accountingBatch.getBankDetails());
 
       if (accountingBatch.getIncludeOtherBankAccounts()
           && appBaseService.getAppBase().getManageMultiBanks()) {
-        bankDetailsSet.addAll(accountingBatch.getCompany().getBankDetailsSet());
+        bankDetailsSet.addAll(accountingBatch.getCompany().getBankDetailsList());
       }
 
       queryBuilder.add(
@@ -165,7 +195,7 @@ public class BatchDirectDebitPaymentSchedule extends BatchDirectDebit {
     processQuery(queryBuilder);
   }
 
-  private void processQuery(QueryBuilder<PaymentScheduleLine> queryBuilder) {
+  protected void processQuery(QueryBuilder<PaymentScheduleLine> queryBuilder) {
     Query<PaymentScheduleLine> query = queryBuilder.build();
 
     List<PaymentScheduleLine> paymentScheduleLineList;
@@ -187,14 +217,24 @@ public class BatchDirectDebitPaymentSchedule extends BatchDirectDebit {
             PaymentSchedule paymentSchedule = paymentScheduleLine.getPaymentSchedule();
             BankDetails bankDetails = paymentScheduleService.getBankDetails(paymentSchedule);
             Preconditions.checkArgument(
-                bankDetails.getActive(), I18n.get("Bank details are inactive."));
+                bankDetails.getActive(),
+                bankDetails.getPartner() != null
+                    ? bankDetails.getPartner().getFullName()
+                        + " - "
+                        + I18n.get("Bank details are inactive.")
+                    : I18n.get("Bank details are inactive."));
 
             if (directDebitPaymentMode.getOrderTypeSelect()
                 == PaymentModeRepository.ORDER_TYPE_SEPA_DIRECT_DEBIT) {
               Partner partner = paymentSchedule.getPartner();
               Preconditions.checkNotNull(partner, I18n.get("Partner is missing."));
-              Preconditions.checkNotNull(
-                  partner.getActiveUmr(), I18n.get("Partner active UMR is missing."));
+              Company company =
+                  Optional.of(batch)
+                      .map(Batch::getAccountingBatch)
+                      .map(AccountingBatch::getCompany)
+                      .orElse(null);
+              Umr activeUmr = umrService.getActiveUmr(company, bankDetails);
+              Preconditions.checkNotNull(activeUmr, I18n.get("Partner active UMR is missing."));
             }
           }
 
